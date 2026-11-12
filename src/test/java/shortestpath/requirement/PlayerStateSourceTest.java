@@ -6,8 +6,16 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import org.slf4j.LoggerFactory;
+import net.runelite.api.gameval.DBTableID;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -66,6 +74,65 @@ public class PlayerStateSourceTest
 	// ------------------------------------------------------------------
 	// RequirementContext.capture end-to-end over the map-backed source.
 	// ------------------------------------------------------------------
+
+	@Test
+	public void musicDebugLogIncludesLockedCountAndNames()
+	{
+		Client client = mock(Client.class);
+		when(client.getClientThread()).thenReturn(Thread.currentThread());
+		when(client.getDBTableRows(DBTableID.Music.ID)).thenReturn(List.of(1, 2));
+		for (int row : List.of(1, 2))
+		{
+			when(client.getDBTableField(row, DBTableID.Music.COL_RELEASE_TYPE, 0)).thenReturn(new Object[]{1});
+			when(client.getDBTableField(row, DBTableID.Music.COL_HIDDEN, 0)).thenReturn(new Object[]{0});
+			when(client.getDBTableField(row, DBTableID.Music.COL_HOLIDAY, 0)).thenReturn(new Object[]{-1});
+			when(client.getDBTableField(row, DBTableID.Music.COL_AUTOMATIC_UNLOCK, 0)).thenReturn(new Object[]{0});
+			when(client.getDBTableField(row, DBTableID.Music.COL_VARIABLE, 0)).thenReturn(new Object[]{1});
+			when(client.getDBTableField(row, DBTableID.Music.COL_VARIABLE, 1)).thenReturn(new Object[]{row});
+		}
+		when(client.getIntStack()).thenReturn(new int[]{1 << 2});
+		when(client.getDBTableField(1, DBTableID.Music.COL_DISPLAYNAME, 0)).thenReturn(new Object[]{"Adventure"});
+		Logger logger = (Logger) LoggerFactory.getLogger(ClientPlayerStateSource.class);
+		Level previousLevel = logger.getLevel();
+		ListAppender<ILoggingEvent> appender = new ListAppender<>();
+		appender.start();
+		logger.addAppender(appender);
+		logger.setLevel(Level.DEBUG);
+		try
+		{
+			assertEquals(1, new ClientPlayerStateSource(client).musicTracks().getUnlocked());
+			assertEquals("Music cape: 1 required tracks locked (1 unlocked / 2 required): [Adventure]",
+				appender.list.get(0).getFormattedMessage());
+			// Both rows share varp index 1, so the script should only run once.
+			verify(client, times(1)).runScript(ClientPlayerStateSource.GET_MUSIC_VARP, 1);
+		}
+		finally
+		{
+			logger.detachAppender(appender);
+			logger.setLevel(previousLevel);
+			appender.stop();
+		}
+	}
+
+	@Test
+	public void mixologyUsesBaseHerbloreWhileOtherSkillsKeepBoosts()
+	{
+		for (int base : new int[]{59, 60})
+		{
+			MapPlayerStateSource source = new MapPlayerStateSource()
+				.realSkillLevel(Skill.HERBLORE, base).boostedSkillLevel(Skill.HERBLORE, 64)
+				.realSkillLevel(Skill.MAGIC, 59).boostedSkillLevel(Skill.MAGIC, 64);
+			Transport mixology = new Transport.TransportBuilder().type(TransportType.TELEPORTATION_MINIGAME)
+				.skillLevels("60 Herblore").build();
+			RequirementContext context = RequirementContext.capture(source, new TestRequirementHooks(),
+				RequirementTestFixtures.policy(MODE), 0L, List.of(mixology), Map.of(), null,
+				Set.of(), false, new LeagueModeState(), null, Set.of());
+			assertEquals(base, context.getBoostedSkillLevelsAndMore().get(Skill.HERBLORE));
+			assertEquals(64, context.getBoostedSkillLevelsAndMore().get(Skill.MAGIC));
+			assertEquals(base >= 60, RequirementTestFixtures.requirements(context,
+				RequirementTestFixtures.policy(MODE)).check(mixology) == RejectionReason.NONE);
+		}
+	}
 
 	@Test
 	public void capturePopulatesTheContextWithoutAClient()
@@ -192,6 +259,7 @@ public class PlayerStateSourceTest
 		assertThrows(IllegalStateException.class, source::totalLevel);
 		assertThrows(IllegalStateException.class, () -> source.questState(Quest.TREE_GNOME_VILLAGE));
 		assertThrows(IllegalStateException.class, source::maximumQuestPoints);
+		assertThrows(IllegalStateException.class, source::musicTracks);
 		assertThrows(IllegalStateException.class, source::localPlayerWorldLocation);
 		assertThrows(IllegalStateException.class, source::modalWidgetOpen);
 		assertThrows(IllegalStateException.class, () -> source.itemContainer(InventoryID.INV));

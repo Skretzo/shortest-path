@@ -49,7 +49,7 @@ public class PathfinderConfigItemQuantitiesTest
 	private EnumComposition runePouchEnum;
 
 	private PathfinderConfig pathfinderConfig;
-	private final shortestpath.items.ItemStateService itemState = shortestpath.items.ItemStateService.forTesting();
+	private final shortestpath.items.ItemStateService itemState = shortestpath.items.ItemStateTestServices.forTesting();
 
 	@Test
 	public void runePouchRunesAddToLooseRunes()

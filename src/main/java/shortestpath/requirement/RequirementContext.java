@@ -1,24 +1,11 @@
 package shortestpath.requirement;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import lombok.Getter;
-import net.runelite.api.ItemContainer;
-import net.runelite.api.Quest;
-import net.runelite.api.QuestState;
-import net.runelite.api.Skill;
-import net.runelite.api.gameval.VarPlayerID;
-import net.runelite.api.gameval.VarbitID;
-import shortestpath.leagues.LeagueModeSnapshot;
-import shortestpath.leagues.LeagueModeState;
-import shortestpath.requirement.model.DestinationRequirements;
-import shortestpath.requirement.model.SkillLevels;
-import shortestpath.requirement.model.Unlock;
-import shortestpath.requirement.model.VarRequirement;
+import net.runelite.api.*;
+import net.runelite.api.gameval.*;
+import shortestpath.leagues.*;
+import shortestpath.requirement.model.*;
 import shortestpath.transport.Transport;
 
 /**
@@ -54,6 +41,8 @@ public final class RequirementContext
 	@Getter
 	private final int currentMaxQuestPoints;
 	@Getter
+	private final int currentMaxMusicTracks;
+	@Getter
 	private final Map<Quest, QuestState> questStates;
 	@Getter
 	private final Map<Integer, Integer> varbitValues;
@@ -81,6 +70,7 @@ public final class RequirementContext
 		long evaluationTimeMinutes,
 		int[] boostedSkillLevelsAndMore,
 		int currentMaxQuestPoints,
+		int currentMaxMusicTracks,
 		Map<Quest, QuestState> questStates,
 		Map<Integer, Integer> varbitValues,
 		Map<Integer, Integer> varPlayerValues,
@@ -94,6 +84,7 @@ public final class RequirementContext
 		this.evaluationTimeMinutes = evaluationTimeMinutes;
 		this.boostedSkillLevelsAndMore = SkillLevels.of(boostedSkillLevelsAndMore);
 		this.currentMaxQuestPoints = currentMaxQuestPoints;
+		this.currentMaxMusicTracks = currentMaxMusicTracks;
 		this.questStates = Map.copyOf(questStates);
 		this.varbitValues = Map.copyOf(varbitValues);
 		this.varPlayerValues = Map.copyOf(varPlayerValues);
@@ -141,11 +132,15 @@ public final class RequirementContext
 		{
 			boostedSkillLevelsAndMore[i] = source.boostedSkillLevel(Skill.values()[i]);
 		}
+		// The Herblore transport requirement (Mastering Mixology) checks the base level.
+		boostedSkillLevelsAndMore[Skill.HERBLORE.ordinal()] = source.realSkillLevel(Skill.HERBLORE);
 		boostedSkillLevelsAndMore[i++] = source.totalLevel(); // skill total level
 		boostedSkillLevelsAndMore[i++] = source.combatLevel(); // combat level
-		boostedSkillLevelsAndMore[i] = source.varp(VarPlayerID.QP); // quest points
+		boostedSkillLevelsAndMore[i++] = source.varp(VarPlayerID.QP); // quest points
 
 		int currentMaxQuestPoints = source.maximumQuestPoints();
+		MusicTracks music = source.musicTracks();
+		boostedSkillLevelsAndMore[i] = music.getUnlocked();
 
 		TransportEligibility eligibilitySnapshot = TransportEligibility.collect(source, bank,
 			policy.teleportationItemSetting(), policy.currencyThreshold(), policy.includeBankPath(),
@@ -192,7 +187,7 @@ public final class RequirementContext
 		}
 
 		return new RequirementContext(evaluationTimeMinutes, boostedSkillLevelsAndMore,
-			currentMaxQuestPoints, capturedQuestStates, capturedVarbitValues, capturedVarPlayerValues,
+			currentMaxQuestPoints, music.getRequired(), capturedQuestStates, capturedVarbitValues, capturedVarPlayerValues,
 			eligibilitySnapshot, unlocks, respawnPrifddinas, onSailingBoat,
 			leagueModeState, availableSpiritTrees);
 	}

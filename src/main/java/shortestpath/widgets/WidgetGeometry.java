@@ -1,25 +1,18 @@
 package shortestpath.widgets;
 
-import java.awt.Color;
-import java.awt.Polygon;
-import java.awt.Rectangle;
-import java.awt.Shape;
-import java.awt.geom.Area;
-import java.awt.geom.Ellipse2D;
+import java.awt.*;
+import java.awt.geom.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import javax.inject.*;
 
 import lombok.RequiredArgsConstructor;
 
 import net.runelite.api.Client;
 import net.runelite.api.Point;
-import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.gameval.SpriteID;
-import net.runelite.api.gameval.VarbitID;
+import net.runelite.api.gameval.*;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.worldmap.WorldMap;
 import net.runelite.client.game.SpriteManager;
@@ -53,42 +46,14 @@ public class WidgetGeometry
 	private BufferedImage minimapSpriteResizeable;
 	private Rectangle minimapRectangle = new Rectangle();
 
-	private WidgetGeometry()
-	{
-		this(null, null);
-	}
-
 	/**
 	 * Detached-sprite seam for tests that exercise only the map reads —
 	 * the clip arms need a sprite manager, so callers probing the minimap
-	 * caches wire the full constructor or
-	 * {@link #forTesting(Client, SpriteManager)}.
+	 * caches wire the full constructor.
 	 */
 	WidgetGeometry(Client client)
 	{
 		this(client, null);
-	}
-
-	/**
-	 * Test/harness seam: returns an instance detached from Guice. The
-	 * production instance is the injected singleton. Without a client the
-	 * detached instance collapses to the no-op arms — null clip areas and
-	 * the {@code Integer.MIN_VALUE}/{@link WorldPointUtil#UNDEFINED}
-	 * sentinels — and never throws.
-	 */
-	public static WidgetGeometry forTesting()
-	{
-		return new WidgetGeometry();
-	}
-
-	/**
-	 * Test seam for callers that exercise the widget-backed reads: the
-	 * handed client and sprite manager drive the minimap and world-map
-	 * lookups while the instance stays detached from Guice.
-	 */
-	public static WidgetGeometry forTesting(Client client, SpriteManager spriteManager)
-	{
-		return new WidgetGeometry(client, spriteManager);
 	}
 
 	/**

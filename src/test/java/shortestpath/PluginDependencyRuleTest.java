@@ -283,16 +283,12 @@ public class PluginDependencyRuleTest
 			"RoutingPolicy/TransportEligibility read settings types");
 		LEAF_EDGES.put("requirement -> transport",
 			"requirements evaluate Transport records");
-		LEAF_EDGES.put("settings -> requirement",
-			"Settings/EffectiveConfig expose requirement-facing config");
 		LEAF_EDGES.put("settings -> transport",
-			"Settings/EffectiveConfig expose transport-facing config");
+			"ConfigKey types set settings with transport enums");
 		LEAF_EDGES.put("transport -> leagues",
 			"Transport records reference league regions");
 		LEAF_EDGES.put("transport -> requirement",
 			"transport parsers build requirement models");
-		LEAF_EDGES.put("transport -> settings",
-			"TransportTypeConfig reads settings types");
 	}
 
 	/**

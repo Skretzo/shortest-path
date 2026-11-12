@@ -28,6 +28,7 @@ import shortestpath.requirement.SpiritTreePatches;
 import shortestpath.scheduler.RefreshCoordinator;
 import shortestpath.settings.Effect;
 import shortestpath.widgets.GameWidgets;
+import shortestpath.widgets.WidgetTestServices;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -38,7 +39,7 @@ public class SpiritTreeServiceTest
 	@Before
 	public void setUp()
 	{
-		state = new SpiritTreeService();
+		state = SpiritTreeTestServices.forTesting();
 	}
 
 	@Test
@@ -549,7 +550,7 @@ public class SpiritTreeServiceTest
 	@Test
 	public void detachedRefreshMergesLiveSampleWithoutObserving()
 	{
-		SpiritTreeService service = SpiritTreeService.forTesting();
+		SpiritTreeService service = SpiritTreeTestServices.forTesting();
 		service.setAvailableSpiritTreesForTest(Set.of("Etceteria"));
 
 		PlayerStateSource source = mock(PlayerStateSource.class);
@@ -567,7 +568,7 @@ public class SpiritTreeServiceTest
 	@Test
 	public void detachedRefreshEvictsStalePublishedPatch()
 	{
-		SpiritTreeService service = SpiritTreeService.forTesting();
+		SpiritTreeService service = SpiritTreeTestServices.forTesting();
 		service.setAvailableSpiritTreesForTest(Set.of("Port Sarim", "Etceteria"));
 
 		PlayerStateSource source = mock(PlayerStateSource.class);
@@ -582,7 +583,7 @@ public class SpiritTreeServiceTest
 	@Test
 	public void detachedRefreshBypassesRegionSettlement()
 	{
-		SpiritTreeService service = SpiritTreeService.forTesting();
+		SpiritTreeService service = SpiritTreeTestServices.forTesting();
 
 		PlayerStateSource source = mock(PlayerStateSource.class);
 		when(source.localPlayerWorldLocation()).thenReturn(new WorldPoint(3060, 3258, 0));
@@ -695,7 +696,7 @@ public class SpiritTreeServiceTest
 	{
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
 		SpiritTreeService service = new SpiritTreeService(
-			mock(ConfigManager.class), null, coordinator, GameWidgets.forTesting());
+			mock(ConfigManager.class), null, coordinator, WidgetTestServices.gameWidgets());
 
 		service.onMenuOpened(false);
 		service.onMenuOpened(true);

@@ -1,15 +1,11 @@
 package shortestpath.transport.parser;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import lombok.extern.slf4j.Slf4j;
-import shortestpath.ItemVariations;
-import shortestpath.Util;
-import shortestpath.requirement.model.ItemRequirement;
-import shortestpath.requirement.model.TransportItems;
-import shortestpath.requirement.model.Unlock;
+import shortestpath.*;
+import shortestpath.requirement.model.*;
 
 /**
  * Parses item requirements from TSV field values.

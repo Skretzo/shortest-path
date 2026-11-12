@@ -1,21 +1,12 @@
 package shortestpath;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
+import java.awt.*;
 import java.awt.event.ItemEvent;
-import javax.swing.BoxLayout;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.SwingConstants;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.components.DimmableJPanel;
-import lombok.AccessLevel;
-import lombok.Getter;
+import lombok.*;
 
 /**
  * One transport-family card in the sidebar panel: a 16px icon slot, the family
@@ -158,7 +149,7 @@ class TransportFamilyCard extends ExpandableSurface
 		{
 			// No master control to ask — the configured value itself says
 			// whether the family routes (enums: anything but NONE).
-			Object value = panel.settings.configuredValue(keyName);
+			Object value = panel.settings.configured(keyName);
 			if (value instanceof Enum)
 			{
 				return !"NONE".equals(((Enum<?>) value).name());
@@ -192,7 +183,7 @@ class TransportFamilyCard extends ExpandableSurface
 	 */
 	void syncFromConfig()
 	{
-		Object value = panel.settings.configuredValue(keyName);
+		Object value = panel.settings.configured(keyName);
 		PanelRows.resync(syncing, () ->
 		{
 			if (masterControl instanceof JCheckBox)
@@ -213,7 +204,7 @@ class TransportFamilyCard extends ExpandableSurface
 
 	private JComponent createMasterControl(String description)
 	{
-		Object value = panel.settings.configuredValue(keyName);
+		Object value = panel.settings.configured(keyName);
 		if (value instanceof Enum)
 		{
 			@SuppressWarnings("unchecked")

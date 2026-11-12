@@ -54,7 +54,7 @@ public class MultiTargetTest
 		int[] targets = {T3_TARGET, T3_D, SECOND_SYNTHETIC};
 		TargetOverlay multi = new TargetOverlay(graph, t3Collision(), targets);
 
-		ReverseLabels labels = ReverseLabels.computeClique(multi);
+		ReverseLabels labels = ReverseLabelsOracle.computeClique(multi);
 
 		assertMinimumOverSingles(graph, t3Collision(), targets, labels, false);
 		for (int i = 0; i < multi.targetCount(); i++)
@@ -75,7 +75,7 @@ public class MultiTargetTest
 
 		ReverseLabels sparse = ReverseLabels.computeSparse(multi);
 
-		assertArrayEquals(ReverseLabels.computeClique(multi).labels(), sparse.labels());
+		assertArrayEquals(ReverseLabelsOracle.computeClique(multi).labels(), sparse.labels());
 		assertMinimumOverSingles(graph, collision, targets, sparse, true);
 	}
 
@@ -170,7 +170,7 @@ public class MultiTargetTest
 			for (int target : targets)
 			{
 				TargetOverlay single = new TargetOverlay(graph, collision, target);
-				ReverseLabels labels = sparse ? ReverseLabels.computeSparse(single) : ReverseLabels.computeClique(single);
+				ReverseLabels labels = sparse ? ReverseLabels.computeSparse(single) : ReverseLabelsOracle.computeClique(single);
 				expected = Math.min(expected, labels.labels()[state]);
 			}
 			assertEquals("state " + state, expected, multi.labels()[state]);

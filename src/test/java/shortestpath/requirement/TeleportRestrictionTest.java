@@ -7,8 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
 import shortestpath.ItemVariations;
+import shortestpath.LogCapture;
 import shortestpath.requirement.model.TransportItems;
 
 /**
@@ -23,6 +25,9 @@ import shortestpath.requirement.model.TransportItems;
  */
 public class TeleportRestrictionTest
 {
+	@Rule
+	public final LogCapture log = new LogCapture("shortestpath.requirement.TeleportRestriction");
+
 	@Test
 	public void bareIdsParseIntoTheBlockedSet()
 	{

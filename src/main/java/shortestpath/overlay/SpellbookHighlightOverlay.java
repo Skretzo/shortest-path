@@ -1,27 +1,19 @@
 package shortestpath.overlay;
 
+import shortestpath.settings.ConfigKey;
 import com.google.inject.Inject;
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
-import java.awt.Rectangle;
-import java.awt.Stroke;
-import java.util.HashMap;
+import java.awt.*;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import shortestpath.Util;
-import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.PathStep;
+import shortestpath.pathfinder.*;
 import shortestpath.presentation.PathAnnotator;
 import shortestpath.scheduler.PathScheduler;
 import shortestpath.settings.Settings;
-import shortestpath.transport.Transport;
-import shortestpath.transport.TransportType;
+import shortestpath.transport.*;
 
 public class SpellbookHighlightOverlay extends AbstractHighlightOverlay
 {
@@ -51,7 +43,7 @@ public class SpellbookHighlightOverlay extends AbstractHighlightOverlay
 	@Override
 	protected boolean enabled()
 	{
-		return settings.display().highlightSpellbookSpells();
+		return settings.bool(ConfigKey.HIGHLIGHT_SPELLBOOK_SPELLS);
 	}
 
 	@Override
@@ -66,7 +58,7 @@ public class SpellbookHighlightOverlay extends AbstractHighlightOverlay
 		ActiveSearch search)
 	{
 		Set<Transport> transports = annotator.transportsForEdge(path.get(pathIndex), path.get(pathIndex + 1));
-		Color highlight = settings.display().colourBankPickupHighlight();
+		Color highlight = settings.get(ConfigKey.COLOUR_BANK_PICKUP_HIGHLIGHT);
 
 		for (Transport transport : transports)
 		{

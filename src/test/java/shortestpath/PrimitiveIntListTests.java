@@ -235,4 +235,55 @@ public class PrimitiveIntListTests
 		Assert.assertEquals(1, intList.get(0));
 		Assert.assertEquals(2, intList.get(1));
 	}
+
+	@Test
+	public void columnSplitsInterleavedValues()
+	{
+		PrimitiveIntList intList = new PrimitiveIntList();
+		for (int i = 1; i <= 6; i++)
+		{
+			intList.add(i);
+		}
+		Assert.assertArrayEquals(new int[] {1, 3, 5}, intList.column(2, 0));
+		Assert.assertArrayEquals(new int[] {2, 4, 6}, intList.column(2, 1));
+		Assert.assertArrayEquals(new int[] {3, 6}, intList.column(3, 2));
+		Assert.assertArrayEquals(new int[] {1, 2, 3, 4, 5, 6}, intList.column(1, 0));
+	}
+
+	@Test
+	public void columnOfAnEmptyListIsEmpty()
+	{
+		PrimitiveIntList intList = new PrimitiveIntList();
+		Assert.assertEquals(0, intList.column(3, 0).length);
+		Assert.assertEquals(0, intList.column(1, 0).length);
+	}
+
+	@Test
+	public void columnIgnoresAnIncompleteTrailingGroup()
+	{
+		PrimitiveIntList intList = new PrimitiveIntList();
+		for (int i = 1; i <= 5; i++)
+		{
+			intList.add(i);
+		}
+		Assert.assertArrayEquals(new int[] {1, 3}, intList.column(2, 0));
+		Assert.assertArrayEquals(new int[] {2, 4}, intList.column(2, 1));
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void columnRejectsAnOffsetOutsideTheGroup()
+	{
+		PrimitiveIntList intList = new PrimitiveIntList();
+		for (int i = 1; i <= 4; i++)
+		{
+			intList.add(i);
+		}
+		intList.column(2, 2);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void columnRejectsAZeroStride()
+	{
+		new PrimitiveIntList().column(0, 0);
+	}
 }

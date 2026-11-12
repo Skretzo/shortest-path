@@ -1,35 +1,32 @@
 package shortestpath.pathfinder;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.IntPredicate;
-import java.util.function.Supplier;
+import java.util.function.*;
 import shortestpath.leagues.LeagueModeState;
-import shortestpath.pathfinder.astar.AStarForwardSearch;
-import shortestpath.pathfinder.astar.AStarRoute;
-import shortestpath.pathfinder.astar.AStarRoutingSession;
-import shortestpath.pathfinder.astar.AStarWalkCanonicalizer;
-import shortestpath.pathfinder.astar.InGameWalkRewriter;
-import shortestpath.pathfinder.astar.PreparedRoutingAccount;
-import shortestpath.pathfinder.astar.PreparedTarget;
-import shortestpath.pathfinder.astar.RoutingStatic;
-import shortestpath.pathfinder.astar.SearchRestrictions;
-import shortestpath.pathfinder.astar.SiteGraph;
+import shortestpath.pathfinder.astar.*;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 /** ActiveSearch adapter for the A* core. */
+@Slf4j
 public final class AStarPathfinder implements ActiveSearch
 {
 	private final PathfinderStats stats = new PathfinderStats();
 	@Getter private final int start;
 	@Getter private final Targets targets;
-	// The states the search terminates on: the targets plus each blocked target's fallback tiles,
-	// resolved the same way the legacy backend resolves them (issue #640), each in the bank layers
-	// where the player holds that target's items. {@code null} for a search that failed to start.
-	private final GoalStates goals;
+	// The states the search terminates on: the targets plus the fallback tiles of each one the
+	// search cannot end on (issue #640), each in the bank layers where the player holds that
+	// target's items. With collision-aware blocked targets on they follow a ReachableGoalRule over
+	// the routing static's search tiles, and otherwise the collision rule. Resolved in run(), where
+	// the routing static is loaded, from the inputs taken when the search is created. {@code null}
+	// until then, and for a search that failed to start.
+	private GoalStates goals;
+	private final GoalRule collisionRule;
+	private final IntPredicate transportDestination;
+	private final HeldItems heldItems;
+	private final int unreachableTargetDistance;
+	private final boolean collisionAwareBlockedTargets;
 	private final Runnable completionCallback;
 	private final CollisionMap collision;
 	private final Supplier<RoutingStatic> routingStatic;
@@ -51,9 +48,7 @@ public final class AStarPathfinder implements ActiveSearch
 	private volatile long reverseSearchNanos;
 	private volatile long heuristicPrepareNanos;
 	private volatile long forwardSearchNanos;
-	private volatile long walkCanonicalizeNanos;
-	private volatile List<AStarWalkCanonicalizer.Diagnostic> walkDiagnostics = List.of();
-	private volatile long walkRewriteNanos;
+	private volatile long walkNanos;
 	private volatile List<Integer> clickPoints = List.of();
 	private volatile List<Integer> keptStepIndices = List.of();
 	private volatile boolean graphReused;
@@ -137,9 +132,13 @@ public final class AStarPathfinder implements ActiveSearch
 		this.collision = config.getMap();
 		this.routingStatic = routingStatic;
 		this.session = session == null ? new AStarRoutingSession() : session;
-		this.goals = GoalStates.resolve(config, start, targets);
+		this.collisionRule = TargetGoals.collisionRule(config, start);
+		this.transportDestination = config::isTransportDestination;
+		this.heldItems = config.getHeldItems();
+		this.unreachableTargetDistance = config.getUnreachableTargetDistance();
+		this.collisionAwareBlockedTargets = config.isCollisionAwareBlockedTargets();
 		long phaseStarted = System.nanoTime();
-		this.account = config.prepareAStarRoutingAccount(true, goals.needsBank());
+		this.account = config.prepareAStarRoutingAccount(true, GoalStates.needsBank(targets, heldItems));
 		this.accountPrepareNanos = System.nanoTime() - phaseStarted;
 		this.restrictions = restrictions(config, targets.points());
 		this.cutoffMillis = config.getCalculationCutoffMillis();
@@ -190,6 +189,11 @@ public final class AStarPathfinder implements ActiveSearch
 		this.account = null;
 		this.restrictions = SearchRestrictions.none();
 		this.goals = null;
+		this.collisionRule = null;
+		this.transportDestination = null;
+		this.heldItems = null;
+		this.unreachableTargetDistance = 0;
+		this.collisionAwareBlockedTargets = false;
 		this.cutoffMillis = 0;
 		this.heuristicWeight = 1;
 		this.accountPrepareNanos = 0;
@@ -300,22 +304,9 @@ public final class AStarPathfinder implements ActiveSearch
 	{ return forwardSearchNanos;
 	}
 
-	/** Time spent choosing each walking leg's canonical walk. */
-	public long getWalkCanonicalizeNanos()
-	{ return walkCanonicalizeNanos;
-	}
-
-	/**
-	 * Walking legs that kept the search's own walk because the canonicaliser disagreed with the
-	 * route about them; empty when every leg was canonicalised.
-	 */
-	public List<AStarWalkCanonicalizer.Diagnostic> getWalkDiagnostics()
-	{ return walkDiagnostics;
-	}
-
-	/** Time spent rewriting the canonical walking legs into the game's own walking paths. */
-	public long getWalkRewriteNanos()
-	{ return walkRewriteNanos;
+	/** Time spent rewriting the walking legs into the game's own walking paths. */
+	public long getWalkNanos()
+	{ return walkNanos;
 	}
 
 	/**
@@ -349,13 +340,8 @@ public final class AStarPathfinder implements ActiveSearch
 	{
 		Map<String, String> entries = new LinkedHashMap<>();
 		entries.put("Forward search", PathfinderStats.millis(getForwardSearchNanos()));
-		entries.put("Walk canonicalize", PathfinderStats.millis(getWalkCanonicalizeNanos()));
-		if (!getWalkDiagnostics().isEmpty())
-		{
-			entries.put("Legs kept as found", Integer.toString(getWalkDiagnostics().size()));
-		}
 		int keptSteps = getKeptStepIndices().size();
-		entries.put("Walk rewrite", PathfinderStats.millis(getWalkRewriteNanos())
+		entries.put("Walk rewrite", PathfinderStats.millis(getWalkNanos())
 			+ (keptSteps > 0 ? ", " + keptSteps + " kept" : ""));
 		entries.put("Target prep", isTargetReused() ? "reused"
 			: PathfinderStats.millis(getReverseSearchNanos() + getHeuristicPrepareNanos()));
@@ -390,6 +376,12 @@ public final class AStarPathfinder implements ActiveSearch
 			long phaseStarted = System.nanoTime();
 			RoutingStatic staticData = routingStatic.get();
 			routingStaticNanos = System.nanoTime() - phaseStarted;
+			GoalRule rule = collisionAwareBlockedTargets
+				? new ReachableGoalRule(collision, transportDestination, packed -> staticData.searchIndex(packed) >= 0,
+					start, unreachableTargetDistance)
+				: collisionRule;
+			goals = GoalStates.resolve(TargetGoals.resolve(targets.points(), transportDestination, rule), targets,
+				heldItems);
 			phaseStarted = System.nanoTime();
 			AStarRoutingSession.Lookup<SiteGraph> graph = session.graph(staticData, account);
 			graphPrepareNanos = System.nanoTime() - phaseStarted;
@@ -398,7 +390,12 @@ public final class AStarPathfinder implements ActiveSearch
 			// The cutoff counts time without progress — and a zero cutoff expires at the
 			// first clock read, exactly like the legacy backend's unconditional deadline.
 			SearchDeadline deadline = new SearchDeadline(cutoffMillis);
-			int[] packedTargets = goals.tiles().stream().mapToInt(Integer::intValue).toArray();
+			// Blocked targets attach to neighbouring components in the relaxed graph, but only
+			// transport landings can actually end a route on them. Keep their snapped goals instead.
+			int[] packedTargets = goals.tiles().stream()
+				.filter(tile -> !TargetGoals.isBlocked(collision, tile) || transportDestination.test(tile))
+				.mapToInt(Integer::intValue).toArray();
+			int[] targetLayers = java.util.Arrays.stream(packedTargets).map(goals::acceptedLayers).toArray();
 			AStarForwardSearch.Result best = null;
 			int bestTarget = firstTarget();
 			int partialCost = PathfinderResult.NO_PATH_COST;
@@ -411,7 +408,7 @@ public final class AStarPathfinder implements ActiveSearch
 				// One search towards every target at once; it ends at the cheapest one to reach.
 				phaseStarted = System.nanoTime();
 				AStarRoutingSession.Lookup<PreparedTarget> prepared = session.target(graph.value(), collision,
-					packedTargets);
+					packedTargets, targetLayers);
 				targetReused = prepared.reused();
 				if (targetReused)
 				{
@@ -453,20 +450,31 @@ public final class AStarPathfinder implements ActiveSearch
 				}
 				if (found != null)
 				{
-					// Publish only the final path, so the render thread never shows the raw one. First
-					// pick each walking leg's canonical walk among the equally cheap ones, then turn it
-					// into the clicks along it and the paths the game's own walking takes between them.
+					// Publish only the final path, so the render thread never shows the raw one: turn each
+					// walking leg into the clicks along it and the paths the game's own walking takes between them.
 					phaseStarted = System.nanoTime();
-					AStarWalkCanonicalizer.Result canonical = new AStarWalkCanonicalizer(collision, account,
-						restrictions).canonicalize(found);
-					walkCanonicalizeNanos = System.nanoTime() - phaseStarted;
-					walkDiagnostics = canonical.diagnostics();
-					phaseStarted = System.nanoTime();
-					InGameWalkRewriter.Result walked = new InGameWalkRewriter(collision, restrictions).rewrite(canonical);
-					walkRewriteNanos = System.nanoTime() - phaseStarted;
-					clickPoints = walked.clickPoints();
-					keptStepIndices = walked.keptStepIndices();
-					path = walked.path();
+					// The rewrite changes no cost and no non-walking step, so if it fails the search's own
+					// route is still a valid answer: keep it rather than report the search as failed.
+					List<PathStep> finalPath;
+					List<Integer> finalClicks = List.of();
+					List<Integer> finalKept = List.of();
+					try
+					{
+						AStarWalkCanonicalizer.Result walked = new AStarWalkCanonicalizer(collision, account,
+							restrictions).canonicalize(found);
+						finalPath = walked.path();
+						finalClicks = walked.clickPoints();
+						finalKept = walked.keptStepIndices();
+					}
+					catch (RuntimeException e)
+					{
+						log.warn("Walk canonicalization failed; keeping the search's own route", e);
+						finalPath = found.steps();
+					}
+					walkNanos = System.nanoTime() - phaseStarted;
+					clickPoints = finalClicks;
+					keptStepIndices = finalKept;
+					path = finalPath;
 					if (best != null) bestTarget = last(path);
 				}
 			}

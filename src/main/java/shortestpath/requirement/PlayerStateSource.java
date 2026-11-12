@@ -1,14 +1,9 @@
 package shortestpath.requirement;
 
-import java.util.EnumSet;
-import java.util.Map;
-import net.runelite.api.GameState;
-import net.runelite.api.ItemContainer;
-import net.runelite.api.Quest;
-import net.runelite.api.QuestState;
-import net.runelite.api.Skill;
-import net.runelite.api.WorldType;
+import java.util.*;
+import net.runelite.api.*;
 import net.runelite.api.coords.WorldPoint;
+import shortestpath.requirement.model.MusicTracks;
 
 /**
  * The player-state reads the requirement capture path performs, exposed
@@ -91,6 +86,9 @@ public interface PlayerStateSource
 	 * rows of the quest-points database table.
 	 */
 	int maximumQuestPoints();
+
+	/** The player's unlocked and required non-holiday music track counts. */
+	MusicTracks musicTracks();
 
 	/**
 	 * The local player's world location, or {@code null} when the player or

@@ -1,24 +1,16 @@
 package shortestpath.overlay;
 
+import shortestpath.settings.ConfigKey;
 import com.google.inject.Inject;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.Shape;
+import java.awt.*;
 
-import net.runelite.api.Client;
-import net.runelite.api.Perspective;
+import net.runelite.api.*;
 import net.runelite.api.Point;
-import net.runelite.client.ui.overlay.Overlay;
-import net.runelite.client.ui.overlay.OverlayLayer;
-import net.runelite.client.ui.overlay.OverlayPosition;
+import net.runelite.client.ui.overlay.*;
 import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.PathStep;
-import shortestpath.scheduler.PathRenderState;
-import shortestpath.scheduler.PathScheduler;
+import shortestpath.pathfinder.*;
+import shortestpath.scheduler.*;
 import shortestpath.settings.Settings;
 import shortestpath.widgets.WidgetGeometry;
 
@@ -68,7 +60,7 @@ public class PathMinimapOverlay extends Overlay
 	public Dimension render(Graphics2D graphics)
 	{
 		ActiveSearch search = scheduler.getActiveSearch();
-		if (!settings.display().drawMinimap() || search == null)
+		if (!settings.bool(ConfigKey.DRAW_MINIMAP) || search == null)
 		{
 			return null;
 		}
@@ -101,7 +93,7 @@ public class PathMinimapOverlay extends Overlay
 			drawOnMinimap(graphics, pathPoint, pathColor, sailing ? 0.5 : 1.0);
 		}
 		OverlayDrawing.forEachUnreachedTarget(search, pathPoints,
-			target -> drawOnMinimap(graphics, target, settings.display().colourPathCalculating()));
+			target -> drawOnMinimap(graphics, target, settings.get(ConfigKey.COLOUR_PATH_CALCULATING)));
 
 		return null;
 	}

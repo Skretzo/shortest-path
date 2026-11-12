@@ -1,8 +1,6 @@
 package shortestpath.pathfinder;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import shortestpath.WorldPointUtil;
 import shortestpath.transport.Transport;

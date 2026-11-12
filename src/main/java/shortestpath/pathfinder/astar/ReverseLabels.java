@@ -2,11 +2,10 @@ package shortestpath.pathfinder.astar;
 
 import java.util.Arrays;
 import shortestpath.pathfinder.BankVisitState;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.*;
 import lombok.experimental.Accessors;
 
-/** Reverse labels in the relaxed graph with a clique oracle and sparse production path. */
+/** Reverse labels in the relaxed graph, computed on the sparse walking network. */
 @AllArgsConstructor
 public final class ReverseLabels
 {
@@ -21,84 +20,6 @@ public final class ReverseLabels
 	private final int explicitRelaxations;
 	private final int attachmentRelaxations;
 	@Getter @Accessors(fluent = true) private final long elapsedNanos;
-	@Getter @Accessors(fluent = true) private final boolean sparse;
-
-
-	/** Production path; test fixtures without a sparse network fall back to the clique reference. */
-	public static ReverseLabels compute(TargetOverlay overlay)
-	{
-		return usableSparse(overlay) ? computeSparse(overlay) : computeClique(overlay);
-	}
-
-	/** Transparent component-clique correctness oracle. */
-	static ReverseLabels computeClique(TargetOverlay overlay)
-	{
-		long started = System.nanoTime();
-		SiteGraph graph = overlay.graph();
-		RoutingStatic stat = overlay.routingStatic();
-		int spatialCount = graph.spatialNodeCount();
-		int[] labels = new int[overlay.queryNodeCount() * 2];
-		Arrays.fill(labels, CostArithmetic.INF);
-		AStarMinHeap queue = new AStarMinHeap(Math.max(16, labels.length));
-		int pushes = 0;
-		for (int target = 0; target < overlay.targetCount(); target++)
-		{
-			for (BankVisitState banked : BankVisitState.values())
-			{
-				int seed = overlay.targetState(target, banked);
-				labels[seed] = 0;
-				queue.push(0, 0, seed);
-				pushes++;
-			}
-		}
-		int settled = 0, stale = 0;
-		while (queue.poll())
-		{
-			int state = queue.state(), cost = queue.cost();
-			if (cost != labels[state])
-			{
-				stale++;
-				continue;
-			}
-			settled++;
-			int node = state / 2;
-			BankVisitState banked = (state & 1) != 0 ? BankVisitState.BANKED : BankVisitState.CARRIED;
-			if (node < graph.nodeCount())
-			{
-				for (int edge = graph.reverseEdgeStart(state); edge < graph.reverseEdgeEnd(state); edge++)
-				{
-					if (relax(labels, queue, graph.reverseFromState(edge),
-						CostArithmetic.add(cost, graph.reverseCost(edge))))
-						pushes++;
-				}
-			}
-			if (node < spatialCount)
-			{
-				for (int component : stat.siteComponents(node))
-				{
-					for (int other : stat.componentSites(component))
-					{
-						if (other != node && relax(labels, queue, SiteGraph.stateId(other, banked),
-							CostArithmetic.add(cost, distance(stat.siteTile(node), stat.siteTile(other)))))
-							pushes++;
-					}
-				}
-				// Targets are seeded at zero, so walking from a site into a target never improves it.
-			}
-			else
-			{
-				int target = overlay.syntheticTarget(node);
-				for (int i = 0; target >= 0 && i < overlay.attachmentCount(target); i++)
-				{
-					if (relax(labels, queue, SiteGraph.stateId(overlay.attachmentSite(target, i), banked),
-						CostArithmetic.add(cost, overlay.attachmentCost(target, i))))
-						pushes++;
-				}
-			}
-		}
-		return new ReverseLabels(overlay, labels, null, null, settled, stale, pushes, 0, 0, 0,
-			System.nanoTime() - started, false);
-	}
 
 	/** Sparse CSR reverse Dijkstra, including internal Steiner states. */
 	static ReverseLabels computeSparse(TargetOverlay overlay)
@@ -121,6 +42,7 @@ public final class ReverseLabels
 		{
 			for (BankVisitState banked : BankVisitState.values())
 			{
+				if (!overlay.isTerminal(target, banked)) continue;
 				int seed = overlay.targetState(target, banked);
 				doubled[seed] = 0;
 				origins[seed] = seed;
@@ -165,8 +87,8 @@ public final class ReverseLabels
 						pushes++;
 				}
 			}
-			// Targets are seeded at zero, so walking from a site into a target never improves it;
-			// only a synthetic target's own attachment edges need relaxing.
+			// Synthetic targets only emit reverse attachments; PreparedHeuristic also estimates
+			// non-terminal layers from their component's finite site labels.
 			int target = vertex < routingNodes ? overlay.syntheticTarget(vertex) : -1;
 			for (int i = 0; target >= 0 && i < overlay.attachmentCount(target); i++)
 			{
@@ -187,7 +109,7 @@ public final class ReverseLabels
 			routingWeights[state] = weights[state];
 		}
 		return new ReverseLabels(overlay, labels, routingOrigins, routingWeights, settled, stale, pushes,
-			sparseEdges, explicitEdges, attachmentEdges, System.nanoTime() - started, true);
+			sparseEdges, explicitEdges, attachmentEdges, System.nanoTime() - started);
 	}
 
 	public int label(int node, BankVisitState banked)
@@ -236,10 +158,6 @@ public final class ReverseLabels
 		return attachmentRelaxations;
 	}
 
-	boolean hasProvenance()
-	{
-		return generatorOrigins != null;
-	}
 	int generatorOrigin(int state)
 	{
 		return generatorOrigins[state];
@@ -253,24 +171,9 @@ public final class ReverseLabels
 		return CostArithmetic.twice(labels[state]);
 	}
 
-	private static boolean usableSparse(TargetOverlay overlay)
-	{
-		RoutingStatic stat = overlay.routingStatic();
-		return stat.sparseAdjacencyCount() != 0 || stat.siteCount() <= 1;
-	}
-
 	private static int sparseNode(int routingNodes, int originalCount, int sparseVertex)
 	{
 		return sparseVertex < originalCount ? sparseVertex : routingNodes + sparseVertex - originalCount;
-	}
-
-	private static boolean relax(int[] labels, AStarMinHeap queue, int state, int candidate)
-	{
-		if (candidate == CostArithmetic.INF || candidate >= labels[state])
-			return false;
-		labels[state] = candidate;
-		queue.push(candidate, candidate, state);
-		return true;
 	}
 
 	private static boolean relax(int[] distances, int[] origins, int[] weights, AStarMinHeap queue, int from,
@@ -292,10 +195,5 @@ public final class ReverseLabels
 		}
 		queue.push(candidate, candidate, next);
 		return true;
-	}
-
-	private static int distance(int left, int right)
-	{
-		return shortestpath.WorldPointUtil.distanceBetween(left, right);
 	}
 }

@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -28,6 +29,7 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.events.PluginMessage;
 
+import shortestpath.LogCapture;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.ActiveSearch;
@@ -51,6 +53,9 @@ import shortestpath.transport.Transport;
  */
 public class PluginMessageHandlerTest
 {
+	@Rule
+	public final LogCapture log = new LogCapture("shortestpath.api.PluginMessageHandler");
+
 	private Client client;
 	private ClientThread clientThread;
 	private EventBus eventBus;
@@ -134,7 +139,7 @@ public class PluginMessageHandlerTest
 		handler.onPluginMessage(new PluginMessage(Settings.CONFIG_GROUP, "path",
 			Map.of("start", start, "target", Set.of(target), "config", overrides)));
 
-		assertEquals(overrides, settings.rawOverrides());
+		assertEquals(overrides, settings.getOverrides());
 		verify(coordinator).targetRequest(start, Targets.at(Set.of(target)));
 	}
 
@@ -194,7 +199,7 @@ public class PluginMessageHandlerTest
 
 		handler.onPluginMessage(new PluginMessage(Settings.CONFIG_GROUP, "clear", Map.of()));
 
-		assertTrue(settings.rawOverrides().isEmpty());
+		assertTrue(settings.getOverrides().isEmpty());
 		verify(scheduler).withSchedulerLock(any(Runnable.class));
 		verify(scheduler).setTarget(WorldPointUtil.UNDEFINED);
 	}

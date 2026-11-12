@@ -9,7 +9,9 @@ import java.util.Objects;
 import java.util.Set;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import shortestpath.LogCapture;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.Util;
 import shortestpath.WorldPointUtil;
@@ -24,6 +26,9 @@ import shortestpath.leagues.LeagueRegion;
  */
 public class TransportRegionOverrideTest
 {
+	@Rule
+	public final LogCapture log = new LogCapture("shortestpath.transport");
+
 	private Map<Integer, Set<Transport>> transports;
 
 	@Before

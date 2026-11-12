@@ -37,7 +37,7 @@ public class PohServiceTest
 	public void setUp()
 	{
 		coordinator = mock(RefreshCoordinator.class);
-		service = PohService.forTesting(coordinator);
+		service = PohTestServices.forTesting(coordinator);
 	}
 
 	private static Transport transport(TransportType type, String displayInfo, String objectInfo, int destination)

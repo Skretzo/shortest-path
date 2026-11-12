@@ -1,45 +1,24 @@
 package shortestpath.scheduler;
 
+import shortestpath.settings.ConfigKey;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.Supplier;
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import javax.inject.*;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Client;
-import net.runelite.api.Player;
+import net.runelite.api.*;
 import net.runelite.client.callback.ClientThread;
-import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
-import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
+import net.runelite.client.ui.overlay.worldmap.*;
 import net.runelite.client.util.ImageUtil;
 import shortestpath.settings.Settings;
 import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.AStarPathfinder;
-import shortestpath.pathfinder.AStarRoutingStaticProvider;
-import shortestpath.pathfinder.PathStep;
-import shortestpath.pathfinder.sailing.BoatHull;
-import shortestpath.pathfinder.sailing.SailingMoves;
-import shortestpath.pathfinder.sailing.SailingPathfinder;
-import shortestpath.pathfinder.PathfinderConfig;
-import shortestpath.pathfinder.Targets;
+import shortestpath.pathfinder.*;
+import shortestpath.pathfinder.sailing.*;
 import shortestpath.pathfinder.astar.AStarRoutingSession;
-import shortestpath.sailing.SailingService;
-import shortestpath.sailing.SailingState;
+import shortestpath.sailing.*;
 
 /**
  * Owns the plugin's pathfinding concurrency: the single-worker executor, the mutex that pairs
@@ -299,14 +278,14 @@ public class PathScheduler
 		boolean sameLocation = lastLocation == location;
 		lastLocation = location;
 		if (pathfinder == null || (path = pathfinder.getPath()) == null || path.isEmpty() ||
-			settings.lifecycle().recalculateDistance() < 0 || sameLocation)
+			settings.num(ConfigKey.RECALCULATE_DISTANCE) < 0 || sameLocation)
 		{
 			return true;
 		}
 
 		for (PathStep pathStep : path)
 		{
-			if (WorldPointUtil.distanceBetween(location, pathStep.getPackedPosition()) < settings.lifecycle().recalculateDistance())
+			if (WorldPointUtil.distanceBetween(location, pathStep.getPackedPosition()) < settings.num(ConfigKey.RECALCULATE_DISTANCE))
 			{
 				return true;
 			}
@@ -318,7 +297,7 @@ public class PathScheduler
 			for (int i = 1; i < path.size(); i++)
 			{
 				if (distanceToLine(location, path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition())
-					< settings.lifecycle().recalculateDistance())
+					< settings.num(ConfigKey.RECALCULATE_DISTANCE))
 				{
 					return true;
 				}

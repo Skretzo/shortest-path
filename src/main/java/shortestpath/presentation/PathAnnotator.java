@@ -1,42 +1,23 @@
 package shortestpath.presentation;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import javax.inject.*;
 
 import lombok.RequiredArgsConstructor;
 
-import net.runelite.api.Client;
-import net.runelite.api.ItemComposition;
-import net.runelite.api.ScriptID;
+import net.runelite.api.*;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 
-import shortestpath.PrimitiveIntHashMap;
-import shortestpath.WorldPointUtil;
+import shortestpath.*;
 import shortestpath.items.ItemStateService;
-import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.Arrival;
-import shortestpath.pathfinder.BankVisitState;
-import shortestpath.pathfinder.CollisionMap;
-import shortestpath.pathfinder.NodeGraph;
-import shortestpath.pathfinder.PathStep;
-import shortestpath.pathfinder.PathfinderConfig;
-import shortestpath.pathfinder.PathfinderResult;
-import shortestpath.pathfinder.TransportAvailability;
+import shortestpath.pathfinder.*;
 import shortestpath.poh.PohService;
 import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.requirement.model.ItemRequirement;
-import shortestpath.transport.Transport;
-import shortestpath.transport.TransportType;
+import shortestpath.transport.*;
 
 /**
  * The presentation leaf: owns the shared edge-annotation and display
@@ -48,9 +29,9 @@ import shortestpath.transport.TransportType;
  * This package is a leaf: nothing here may reference the plugin type.
  * The engine config is late-bound by {@link #attach(PathfinderConfig)}
  * because the shell still constructs it in {@code startUp} and Guice
- * cannot inject it. A detached annotator — one built by
- * {@link #forTesting()} or never attached — answers every display read
- * with its empty/no-op arm rather than throwing.
+ * cannot inject it. A detached annotator — one built without its
+ * collaborators or never attached — answers every display read with its
+ * empty/no-op arm rather than throwing.
  */
 @Singleton
 @RequiredArgsConstructor(onConstructor_ = @Inject)
@@ -99,43 +80,9 @@ public class PathAnnotator
 	private ActiveSearch missingItemsSearch;
 	private String missingItemsText;
 
-	private PathAnnotator()
-	{
-		this(null, null, null);
-	}
-
 	PathAnnotator(PohService pohService, ItemStateService itemState)
 	{
 		this(null, pohService, itemState);
-	}
-
-	/**
-	 * A detached annotator for harnesses and tests: no client, no POH
-	 * service, and no item-state service, so every dependent read takes its
-	 * detached arm instead of throwing. {@link #attach(PathfinderConfig)}
-	 * still wires the engine config for the reads that need it.
-	 */
-	public static PathAnnotator forTesting()
-	{
-		return new PathAnnotator();
-	}
-
-	/**
-	 * Test seam for callers that exercise the POH display arms or the
-	 * bank-pickup facade with real collaborators.
-	 */
-	public static PathAnnotator forTesting(PohService pohService, ItemStateService itemState)
-	{
-		return new PathAnnotator(pohService, itemState);
-	}
-
-	/**
-	 * Test seam for callers that exercise the missing-items label, which
-	 * resolves item names through the client.
-	 */
-	public static PathAnnotator forTesting(Client client, PohService pohService, ItemStateService itemState)
-	{
-		return new PathAnnotator(client, pohService, itemState);
 	}
 
 	/**
@@ -231,7 +178,7 @@ public class PathAnnotator
 		}
 		if (pathfinderConfig == null)
 		{
-			// Detached (un-attached or forTesting) annotator — no engine config
+			// Detached (un-attached or built without collaborators) annotator — no engine config
 			// to reconstruct the edge against.
 			return Set.of();
 		}

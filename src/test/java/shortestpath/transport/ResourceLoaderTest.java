@@ -13,7 +13,9 @@ import net.runelite.api.Quest;
 import net.runelite.api.Skill;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import shortestpath.LogCapture;
 import shortestpath.WorldPointUtil;
 import shortestpath.leagues.LeagueRegion;
 import shortestpath.requirement.model.DestinationRequirements;
@@ -37,6 +39,9 @@ import shortestpath.transport.parser.ItemRequirementParser;
  */
 public class ResourceLoaderTest
 {
+	@Rule
+	public final LogCapture log = new LogCapture("shortestpath.transport");
+
 
 	private Map<Integer, Set<Transport>> transports;
 
@@ -309,7 +314,7 @@ public class ResourceLoaderTest
 	public void testSpecialSkillRequirements()
 	{
 		String contents = "# Origin\tDestination\tSkills\n" +
-			"3200 3200 0\t3300 3300 0\t1500 Total;100 Combat;200 Quest\n";
+			"3200 3200 0\t3300 3300 0\t1500 Total;100 Combat;200 Quest;700 Music\n";
 
 		ResourceLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -321,13 +326,14 @@ public class ResourceLoaderTest
 		Assert.assertEquals("Total level should be 1500", 1500, skillLevels.totalLevel());
 		Assert.assertEquals("Combat level should be 100", 100, skillLevels.combatLevel());
 		Assert.assertEquals("Quest points should be 200", 200, skillLevels.get(SkillLevels.QUEST_POINTS_INDEX));
+		Assert.assertEquals(700, skillLevels.get(SkillLevels.MUSIC_TRACKS_INDEX));
 	}
 
 	@Test
 	public void testMaximumSkillRequirements()
 	{
 		String contents = "# Origin\tDestination\tSkills\n" +
-			"3200 3200 0\t3300 3300 0\tMax Agility;Max Total;Max Combat;Max Quest\n";
+			"3200 3200 0\t3300 3300 0\tMax Agility;Max Total;Max Combat;Max Quest;Max Music\n";
 
 		ResourceLoader.addTransportsFromContents(transports, contents, TransportType.TRANSPORT, 0);
 
@@ -338,6 +344,7 @@ public class ResourceLoaderTest
 		Assert.assertEquals(SkillLevels.MAX_LEVEL, skillLevels.totalLevel());
 		Assert.assertEquals(SkillLevels.MAX_LEVEL, skillLevels.combatLevel());
 		Assert.assertEquals(SkillLevels.MAX_LEVEL, skillLevels.get(SkillLevels.QUEST_POINTS_INDEX));
+		Assert.assertEquals(SkillLevels.MAX_LEVEL, skillLevels.get(SkillLevels.MUSIC_TRACKS_INDEX));
 	}
 
 	@Test
@@ -1411,10 +1418,10 @@ public class ResourceLoaderTest
 		Map<Integer, List<DestinationRequirements>> reqs = ResourceLoader.bankRequirements();
 
 		assertFloor("bank requirement tiles", 289, reqs.size());
-		List<DestinationRequirements> cooksGuild = reqs.get(WorldPointUtil.packWorldPoint(3147, 3450, 0));
-		Assert.assertNotNull("Cooks' Guild bank tile carries a requirement", cooksGuild);
-		Assert.assertEquals("99 Cooking or the hard Varrock diary", 2, cooksGuild.size());
-		Assert.assertEquals(99, cooksGuild.get(0).getSkillLevels().get(Skill.COOKING));
+		List<DestinationRequirements> craftingGuild = reqs.get(WorldPointUtil.packWorldPoint(2935, 3280, 0));
+		Assert.assertNotNull("Crafting Guild bank tile carries a requirement", craftingGuild);
+		Assert.assertEquals("99 Crafting or the hard Falador diary", 2, craftingGuild.size());
+		Assert.assertEquals(99, craftingGuild.get(0).getSkillLevels().get(Skill.CRAFTING));
 	}
 
 	// ------------------------------------------------------------------

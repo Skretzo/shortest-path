@@ -1,29 +1,18 @@
 package shortestpath.poh;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import java.util.*;
+import java.util.regex.*;
+import javax.inject.*;
 import lombok.RequiredArgsConstructor;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.util.Text;
 
-import shortestpath.Util;
-import shortestpath.WorldPointUtil;
+import shortestpath.*;
 import shortestpath.scheduler.RefreshCoordinator;
-import shortestpath.settings.Effect;
-import shortestpath.settings.Settings;
-import shortestpath.transport.Transport;
-import shortestpath.transport.TransportType;
+import shortestpath.settings.*;
+import shortestpath.transport.*;
 import shortestpath.widgets.GameWidgets;
 
 /**
@@ -245,31 +234,6 @@ public class PohService
 		this(configManager, null, null);
 	}
 
-	PohService()
-	{
-		this(null, null, null);
-	}
-
-	/**
-	 * A detached service for harnesses and tests: no persistence, so every
-	 * RSProfile read/write takes its detached arm instead of touching
-	 * storage, and no coordinator, so change declares no-op.
-	 */
-	public static PohService forTesting()
-	{
-		return new PohService();
-	}
-
-	/**
-	 * Test seam for asserting change declares: the returned instance hands
-	 * admitted facts to the given (typically mocked) coordinator while
-	 * staying detached from persistence.
-	 */
-	public static PohService forTesting(RefreshCoordinator coordinator)
-	{
-		return new PohService(null, coordinator, null);
-	}
-
 	/**
 	 * Reads the current keybind map from the open Portal Nexus dialog and
 	 * declares the resulting fact to the coordinator. Returns whether at
@@ -405,7 +369,7 @@ public class PohService
 
 	/**
 	 * Hands an admitted fact to the refresh coordinator. Detached
-	 * {@code forTesting} instances carry no coordinator, so the declare
+	 * instances (built with a null coordinator) carry none, so the declare
 	 * no-ops there; a null fact declares nothing, mirroring the return-null
 	 * convention the shell's mapper used to guard.
 	 */

@@ -1,26 +1,15 @@
 package shortestpath.spirittree;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import net.runelite.api.Client;
-import net.runelite.api.Player;
+import java.util.*;
+import java.util.regex.*;
+import javax.inject.*;
+import lombok.*;
+import net.runelite.api.*;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.client.util.Text;
 import net.runelite.client.config.ConfigManager;
-import shortestpath.requirement.ClientPlayerStateSource;
-import shortestpath.requirement.PlayerStateSource;
-import shortestpath.requirement.SpiritTreePatches;
+import shortestpath.requirement.*;
 import shortestpath.scheduler.RefreshCoordinator;
 import shortestpath.settings.Effect;
 import shortestpath.widgets.GameWidgets;
@@ -110,32 +99,6 @@ public class SpiritTreeService
 	SpiritTreeService(ConfigManager configManager, Client client)
 	{
 		this(configManager, client, null, null);
-	}
-
-	SpiritTreeService()
-	{
-		this(null, null, null);
-	}
-
-	/**
-	 * A detached service for harnesses and tests: no persistence and no
-	 * client, so {@link #refreshAvailability} takes its detached arm and
-	 * merges live samples into the published set instead of recording
-	 * observations. No coordinator either, so change declares no-op.
-	 */
-	public static SpiritTreeService forTesting()
-	{
-		return new SpiritTreeService();
-	}
-
-	/**
-	 * Test seam for asserting change declares: the returned instance hands
-	 * admitted facts to the given (typically mocked) coordinator while
-	 * staying detached from persistence and the client.
-	 */
-	public static SpiritTreeService forTesting(RefreshCoordinator coordinator)
-	{
-		return new SpiritTreeService(null, null, coordinator);
 	}
 
 	static boolean spiritTreeTravelable(int varbitValue)
@@ -595,7 +558,7 @@ public class SpiritTreeService
 
 	/**
 	 * Hands an admitted fact to the refresh coordinator. Detached
-	 * {@code forTesting} instances carry no coordinator, so the declare
+	 * instances (built with a null coordinator) carry none, so the declare
 	 * no-ops there; a null fact declares nothing, mirroring the return-null
 	 * convention the shell's mapper used to guard.
 	 */

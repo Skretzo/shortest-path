@@ -1,7 +1,6 @@
 package shortestpath.transport.parser;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 import net.runelite.api.Quest;
 

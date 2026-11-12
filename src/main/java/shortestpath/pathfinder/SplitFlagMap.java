@@ -1,16 +1,10 @@
 package shortestpath.pathfinder;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.io.*;
+import java.util.*;
+import java.util.zip.*;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 
 import static net.runelite.api.Constants.REGION_SIZE;
 
@@ -130,6 +124,39 @@ public class SplitFlagMap
 	public byte getRegionPlaneCounts(int index)
 	{
 		return regionMapPlaneCounts[index];
+	}
+
+	/**
+	 * A 64-bit digest of the collision data: the region grid width, then, for every region that has
+	 * data in ascending region order, its index, plane count and flag words. It does not depend on
+	 * how the regions are laid out in the shared word array, so two maps decoded from the same
+	 * regions agree. It is a change detector for derived data such as the routing component layer,
+	 * not a cryptographic hash.
+	 */
+	public long fingerprint()
+	{
+		long hash = mix(0x243f6a8885a308d3L, widthInclusive);
+		for (int index = 0; index < regionWordOffset.length; index++)
+		{
+			final int wordOffset = regionWordOffset[index];
+			if (wordOffset < 0)
+			{
+				continue;
+			}
+			final int words = regionMapPlaneCounts[index] * WORDS_PER_PLANE;
+			hash = mix(mix(hash, index), words);
+			for (int word = 0; word < words; word++)
+			{
+				hash = mix(hash, flags[wordOffset + word]);
+			}
+		}
+		return hash;
+	}
+
+	private static long mix(long hash, long value)
+	{
+		hash = (hash ^ value) * 0x9e3779b97f4a7c15L;
+		return hash ^ (hash >>> 29);
 	}
 
 	public boolean get(int x, int y, int z, int flag)

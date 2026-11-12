@@ -1,35 +1,46 @@
 package shortestpath.pathfinder;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.io.InputStream;
+import java.util.*;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
-import shortestpath.pathfinder.astar.RoutingCuts;
-import shortestpath.pathfinder.astar.RoutingStatic;
-import shortestpath.pathfinder.astar.RoutingStaticBuilder;
-import shortestpath.transport.ResourceLoader;
-import shortestpath.transport.Transport;
+import shortestpath.pathfinder.astar.*;
+import shortestpath.transport.*;
 
 /**
  * Builds the A* backend's static routing data once per plugin session, on first use.
  *
- * <p>The build runs on whichever thread first calls {@link #get()} (the pathfinding executor in
- * the plugin), never on the client thread. A failed build is remembered and rethrown so a broken
- * resource does not trigger a rebuild on every query.
+ * <p>The data comes from the bundled routing component layer plus the live collision map and
+ * transports. The load runs on whichever thread first calls {@link #get()} (the pathfinding
+ * executor in the plugin), never on the client thread. A layer that is missing, truncated or
+ * malformed, or that was generated from different collision data than the loaded map (checked by
+ * its fingerprint), fails once, logs an error naming the resource and how to regenerate it, and the
+ * failure is remembered and rethrown so a broken resource does not trigger another attempt on every
+ * query. There is no rebuild fallback: until the layer is regenerated, A* routing is unavailable.
  */
 @Slf4j
 public final class AStarRoutingStaticProvider implements Supplier<RoutingStatic>
 {
+	private static final String LAYER_RESOURCE = "routing-components.bin";
+	private static final String REGENERATE = "ROUTING_COMPONENTS_REGEN=1 ./gradlew test"
+		+ " --tests '*RoutingComponentsFreshnessTest' --rerun";
+
 	private final Supplier<CollisionMap> collision;
+	private final Supplier<InputStream> layerSource;
 	private RoutingStatic routingStatic;
 	private RuntimeException failure;
-	private RoutingStaticBuilder.Diagnostics diagnostics;
 
 	public AStarRoutingStaticProvider(Supplier<CollisionMap> collision)
 	{
+		this(collision, RoutingStaticLoader::bundledLayer);
+	}
+
+	/** A seam for tests: where the layer comes from. A {@code null} stream is a missing resource. */
+	AStarRoutingStaticProvider(Supplier<CollisionMap> collision, Supplier<InputStream> layerSource)
+	{
 		this.collision = Objects.requireNonNull(collision, "collision");
+		this.layerSource = Objects.requireNonNull(layerSource, "layerSource");
 	}
 
 	@Override
@@ -37,27 +48,33 @@ public final class AStarRoutingStaticProvider implements Supplier<RoutingStatic>
 	{
 		if (routingStatic != null) return routingStatic;
 		if (failure != null) throw failure;
+		long started = System.nanoTime();
 		try
 		{
 			Map<Integer, Set<Transport>> transports = ResourceLoader.transports();
 			Set<Integer> banks = ResourceLoader.destinations().get("bank");
-			RoutingCuts cuts = RoutingCuts.loadFromResources();
-			if (cuts.cutCount() == 0)
+			try (InputStream layer = layerSource.get())
 			{
-				log.warn("{} is missing or empty; building A* routing data without cuts",
-					RoutingCuts.RESOURCE);
+				routingStatic = RoutingStaticLoader.build(collision.get(), transports, banks == null ? Set.of() : banks,
+					layer);
 			}
-			RoutingStaticBuilder.Result result = RoutingStaticBuilder.build(collision.get(), transports,
-				banks == null ? Set.of() : banks, cuts.pairs());
-			diagnostics = result.diagnostics;
-			routingStatic = result.routingStatic;
-			log.debug("Built A* routing data with cuts for collision map {}: {}",
-				Long.toHexString(cuts.collisionFingerprint()), diagnostics);
+			log.debug("Loaded A* routing data in {} ms: {} search tiles, {} sites",
+				(System.nanoTime() - started) / 1_000_000, routingStatic.searchTileCount(), routingStatic.siteCount());
 			return routingStatic;
 		}
 		catch (IOException error)
 		{
+			log.error("A* routing is unavailable: {} cannot be used ({}). It is derived from collision-map.zip;"
+				+ " regenerate it with {}", LAYER_RESOURCE, error.getMessage(), REGENERATE);
 			failure = new IllegalStateException("cannot build A* routing data", error);
+			throw failure;
+		}
+		catch (OutOfMemoryError error)
+		{
+			// A layer that passes the reader can still size arrays past the heap. Remember it like any other
+			// failure instead of letting the executor task die and every later query retry the load.
+			log.error("A* routing is unavailable: not enough memory to load the routing data", error);
+			failure = new IllegalStateException("not enough memory to build A* routing data", error);
 			throw failure;
 		}
 		catch (RuntimeException error)
@@ -65,11 +82,5 @@ public final class AStarRoutingStaticProvider implements Supplier<RoutingStatic>
 			failure = error;
 			throw error;
 		}
-	}
-
-	/** Diagnostics from the completed build, or {@code null} before the first successful build. */
-	public synchronized RoutingStaticBuilder.Diagnostics getDiagnostics()
-	{
-		return diagnostics;
 	}
 }

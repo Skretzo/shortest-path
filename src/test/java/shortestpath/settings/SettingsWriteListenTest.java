@@ -70,7 +70,7 @@ public class SettingsWriteListenTest
 
 	private static Settings service(ConfigManager configManager, TestShortestPathConfig config)
 	{
-		return new Settings(configManager, config);
+		return Settings.wrap(configManager, config);
 	}
 
 	@Test
@@ -139,7 +139,7 @@ public class SettingsWriteListenTest
 	}
 
 	/**
-	 * The echo a write produces must still republish views and classify, but
+	 * The echo a write produces must still classify, but
 	 * the listener fires exactly once — from the synchronous in-write
 	 * delivery, not again through the external path.
 	 */
@@ -158,7 +158,6 @@ public class SettingsWriteListenTest
 		{
 			// Reproduce ConfigManager's synchronous dispatch: mutate the
 			// configured value, then hand the event back to the service.
-			config.setCalculationCutoffValue(9);
 			ConfigChanged echo = event(invocation.getArgument(1));
 			classified.set(settings.onConfigChanged(echo));
 			return null;
@@ -172,8 +171,6 @@ public class SettingsWriteListenTest
 		assertNotNull("the write's echo still ran classification", fact);
 		assertTrue("write-originated echo still classifies effects",
 			fact.getEffects().contains(Effect.ROUTE_INVALIDATING));
-		assertEquals("the echo still republished the views",
-			9, settings.lifecycle().calculationCutoff());
 	}
 
 	/**
@@ -250,11 +247,11 @@ public class SettingsWriteListenTest
 
 		settings.applyOverrides(Map.of("avoidWilderness", false));
 		assertFalse("effective read sees the override",
-			settings.effective().bool(ConfigKey.AVOID_WILDERNESS));
+			settings.bool(ConfigKey.AVOID_WILDERNESS));
 
 		assertEquals("keyed read returns the configured value",
-			true, settings.configuredValue("avoidWilderness"));
-		assertTrue(settings.configuredBool("avoidWilderness"));
+			true, settings.configured("avoidWilderness"));
+		assertTrue(settings.configured("avoidWilderness"));
 	}
 
 	@Test
@@ -262,10 +259,10 @@ public class SettingsWriteListenTest
 	{
 		TestShortestPathConfig config = new TestShortestPathConfig();
 		Settings settings = Settings.wrap(config);
-		assertFalse(settings.configuredBool("includeBankPath"));
+		assertFalse(settings.configured("includeBankPath"));
 
 		config.setIncludeBankPathValue(true);
-		assertTrue(settings.configuredBool("includeBankPath"));
+		assertTrue(settings.configured("includeBankPath"));
 	}
 
 	@Test
@@ -283,8 +280,8 @@ public class SettingsWriteListenTest
 		Settings settings = Settings.wrap(config);
 
 		assertSame("keyed read returns the stored set untouched",
-			portals, settings.configuredValue("pohNexusPortals"));
-		assertSame(portals, settings.configuredSet("pohNexusPortals"));
+			portals, settings.configured("pohNexusPortals"));
+		assertSame(portals, settings.configured("pohNexusPortals"));
 	}
 
 	@Test
@@ -310,8 +307,8 @@ public class SettingsWriteListenTest
 	{
 		Settings settings = Settings.wrap(new TestShortestPathConfig());
 
-		assertEquals("", settings.configuredValue("builtTeleportationBoxes"));
-		assertEquals("", settings.configuredValue("builtTeleportationPortalsPoh"));
+		assertEquals("", settings.configured("builtTeleportationBoxes"));
+		assertEquals("", settings.configured("builtTeleportationPortalsPoh"));
 	}
 
 	@Test
@@ -320,7 +317,7 @@ public class SettingsWriteListenTest
 		Settings settings = Settings.wrap(new TestShortestPathConfig());
 		try
 		{
-			settings.configuredValue("notARegistryKey");
+			settings.configured("notARegistryKey");
 			fail("unknown keys must fail loudly");
 		}
 		catch (IllegalArgumentException expected)
@@ -340,6 +337,50 @@ public class SettingsWriteListenTest
 		}
 		catch (UnsupportedOperationException expected)
 		{
+		}
+	}
+
+	@Test
+	public void unregisterNeverDropsAConcurrentRegistration() throws Exception
+	{
+		Settings settings = Settings.wrap(new TestShortestPathConfig());
+		int threads = 4;
+		int rounds = 20000;
+		java.util.concurrent.ExecutorService pool =
+			java.util.concurrent.Executors.newFixedThreadPool(threads);
+		try
+		{
+			java.util.List<java.util.concurrent.Future<Integer>> results = new java.util.ArrayList<>();
+			for (int t = 0; t < threads; t++)
+			{
+				results.add(pool.submit(() ->
+				{
+					int missed = 0;
+					for (int r = 0; r < rounds; r++)
+					{
+						java.util.concurrent.atomic.AtomicBoolean fired =
+							new java.util.concurrent.atomic.AtomicBoolean();
+						Runnable unregister = settings.listen("avoidWilderness", () -> fired.set(true));
+						settings.fireListeners("avoidWilderness");
+						if (!fired.get())
+						{
+							missed++;
+						}
+						unregister.run();
+					}
+					return missed;
+				}));
+			}
+			int missed = 0;
+			for (java.util.concurrent.Future<Integer> result : results)
+			{
+				missed += result.get();
+			}
+			assertEquals("a registered listener must always be reachable from the map", 0, missed);
+		}
+		finally
+		{
+			pool.shutdownNow();
 		}
 	}
 }

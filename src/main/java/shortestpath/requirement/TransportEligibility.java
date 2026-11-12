@@ -1,27 +1,14 @@
 package shortestpath.requirement;
 
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import net.runelite.api.ItemContainer;
-import net.runelite.api.gameval.InventoryID;
-import net.runelite.api.gameval.VarbitID;
+import net.runelite.api.gameval.*;
 import shortestpath.ItemVariations;
-import shortestpath.WorldPointUtil;
 import shortestpath.items.OwnedItems;
-import shortestpath.poh.PohService;
-import shortestpath.pathfinder.BankVisitState;
-import shortestpath.pathfinder.HeldItems;
-import shortestpath.requirement.model.ItemRequirement;
-import shortestpath.requirement.model.TransportItems;
-import shortestpath.requirement.model.Unlock;
+import shortestpath.pathfinder.*;
+import shortestpath.requirement.model.*;
 import shortestpath.settings.TeleportationItem;
-import shortestpath.transport.Transport;
-import shortestpath.transport.TransportType;
+import shortestpath.transport.*;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
@@ -250,24 +237,10 @@ public final class TransportEligibility
 			: unlocks;
 	}
 
-	/**
-	 * The transport offered to the refresh loop with the fairy-ring staff rule
-	 * injected as a real item requirement: when the Lumbridge Elite diary is
-	 * incomplete, every {@link TransportType#FAIRY_RING} transport whose origin
-	 * sits outside the POH bounds is replaced by a copy whose
-	 * {@link Transport#getItemRequirements()} is the merge of its own
-	 * requirements and {@link #DRAMEN_STAFF}. The in-house ring needs no staff
-	 * in-game, and POH-ness is positional rather than typed, so the exclusion
-	 * keys off the origin tile. Returns the transport unchanged when the rule
-	 * does not apply — every caller sees one consistent instance, so
-	 * identity-keyed consumers stay coherent.
-	 */
+	/** Injects the staff requirement for every fairy ring unless Lumbridge Elite is complete. */
 	public Transport wrapFairyRingStaff(Transport transport)
 	{
-		if (!fairyRingStaffRequired || !TransportType.FAIRY_RING.equals(transport.getType())
-			|| PohService.isInsidePoh(
-				WorldPointUtil.unpackWorldX(transport.getOrigin()),
-				WorldPointUtil.unpackWorldY(transport.getOrigin())))
+		if (!fairyRingStaffRequired || !TransportType.FAIRY_RING.equals(transport.getType()))
 		{
 			return transport;
 		}

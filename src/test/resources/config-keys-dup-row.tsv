@@ -1,0 +1,3 @@
+#enum-name	key	type	element	def	base-key	coercion	effects
+AVOID_WILDERNESS	avoidWilderness	boolean		true		BOOLEAN	ROUTE_INVALIDATING
+AVOID_WILDERNESS	avoidWilderness	boolean		false		BOOLEAN	ROUTE_INVALIDATING

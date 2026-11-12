@@ -1,29 +1,19 @@
 package shortestpath.overlay;
 
+import shortestpath.settings.ConfigKey;
 import com.google.inject.Inject;
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
-import java.awt.Rectangle;
-import java.awt.Stroke;
+import java.awt.*;
 import java.awt.geom.Area;
 import java.util.List;
 import java.util.Objects;
 import net.runelite.api.Client;
 import net.runelite.api.Point;
 import net.runelite.api.gameval.InterfaceID;
-import net.runelite.client.ui.overlay.Overlay;
-import net.runelite.client.ui.overlay.OverlayLayer;
-import net.runelite.client.ui.overlay.OverlayPosition;
-import shortestpath.TileStyle;
-import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.CollisionMap;
-import shortestpath.pathfinder.PathStep;
+import net.runelite.client.ui.overlay.*;
+import shortestpath.*;
+import shortestpath.pathfinder.*;
 import shortestpath.presentation.PathAnnotator;
-import shortestpath.scheduler.PathRenderState;
-import shortestpath.scheduler.PathScheduler;
+import shortestpath.scheduler.*;
 import shortestpath.settings.Settings;
 import shortestpath.transport.Transport;
 import shortestpath.widgets.WidgetGeometry;
@@ -59,7 +49,7 @@ public class PathMapOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!settings.display().drawMap())
+		if (!settings.bool(ConfigKey.DRAW_MAP))
 		{
 			return null;
 		}
@@ -73,9 +63,9 @@ public class PathMapOverlay extends Overlay
 		Area worldMapClipArea = geometry.getWorldMapClipArea(worldMapRectangle);
 		graphics.setClip(worldMapClipArea);
 
-		if (settings.display().drawCollisionMap())
+		if (settings.bool(ConfigKey.DRAW_COLLISION_MAP))
 		{
-			graphics.setColor(settings.display().colourCollisionMap());
+			graphics.setColor(settings.get(ConfigKey.COLOUR_COLLISION_MAP));
 			int mapWorldPoint = geometry.calculateMapPoint(worldMapRectangle.x, worldMapRectangle.y);
 			int extentX = WorldPointUtil.unpackWorldX(mapWorldPoint);
 			int extentY = WorldPointUtil.unpackWorldY(mapWorldPoint);
@@ -95,7 +85,7 @@ public class PathMapOverlay extends Overlay
 			}
 		}
 
-		if (settings.display().drawTransports())
+		if (settings.bool(ConfigKey.DRAW_TRANSPORTS))
 		{
 			OverlayDrawing.forEachDisplayTransport(annotator, new OverlayDrawing.TransportVisitor()
 			{
@@ -144,7 +134,7 @@ public class PathMapOverlay extends Overlay
 					drawSmallSquareOnMap(graphics, point);
 				}
 			}
-			else if (TileStyle.ARROW_LINE.equals(settings.display().pathStyle()))
+			else if (TileStyle.ARROW_LINE.equals(settings.get(ConfigKey.PATH_STYLE)))
 			{
 				graphics.setColor(colour);
 				drawArrowPath(graphics, path);
@@ -165,7 +155,7 @@ public class PathMapOverlay extends Overlay
 			}
 			OverlayDrawing.forEachUnreachedTarget(search, path, target ->
 			{
-				graphics.setColor(settings.display().colourPathCalculating());
+				graphics.setColor(settings.get(ConfigKey.COLOUR_PATH_CALCULATING));
 				drawOnMap(graphics, target, true, cursorPos);
 			});
 		}

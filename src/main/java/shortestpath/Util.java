@@ -1,10 +1,6 @@
 package shortestpath;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.function.BiConsumer;
@@ -27,20 +23,7 @@ public class Util
 	 */
 	public static byte[] readAllBytes(InputStream in) throws IOException
 	{
-		ByteArrayOutputStream result = new ByteArrayOutputStream();
-		byte[] buffer = new byte[1024];
-
-		while (true)
-		{
-			int read = in.read(buffer, 0, buffer.length);
-
-			if (read == -1)
-			{
-				return result.toByteArray();
-			}
-
-			result.write(buffer, 0, read);
-		}
+		return in.readAllBytes();
 	}
 
 	/**

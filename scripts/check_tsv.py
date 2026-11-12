@@ -63,11 +63,13 @@ KNOWN_COLUMNS = {
 # columns are not transport columns.
 SKIP_FILES = {
     "config-items.tsv",
+    "config-keys.tsv",
     "item-variations.tsv",
     "poh-name-aliases.tsv",
     "spell-widget-ids.tsv",
     "spirit-tree-patches.tsv",
     "teleport_restrictions.tsv",
+    "transport-types.tsv",
 }
 
 SKILL_NAMES = {
@@ -77,7 +79,7 @@ SKILL_NAMES = {
     "herblore", "thieving", "fletching", "slayer", "farming",
     "construction", "hunter", "summoning", "dungeoneering",
     "divination", "invention", "archaeology", "necromancy",
-    "sailing", "total", "combat", "quest", "points",
+    "sailing", "total", "combat", "quest", "points", "music",
 }
 
 # Varbit/VarPlayer operator characters (from VarCheckType enum)

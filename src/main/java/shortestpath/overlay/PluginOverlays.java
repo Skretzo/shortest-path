@@ -3,7 +3,7 @@ package shortestpath.overlay;
 import net.runelite.client.ui.overlay.OverlayManager;
 
 /**
- * The plugin's overlay set as one composite: the shell keeps the eight
+ * The plugin's overlay set as one composite: the shell keeps the nine
  * overlay references injected but delegates every lifecycle call here, so
  * the add/remove/debug-toggle idioms each have a single owner. Register
  * order is render order, so the field order below mirrors the order the
@@ -20,6 +20,7 @@ public final class PluginOverlays
 	private final BankItemHighlightOverlay bankItemHighlightOverlay;
 	private final SpellbookHighlightOverlay spellbookHighlightOverlay;
 	private final InventoryHighlightOverlay inventoryHighlightOverlay;
+	private final ScrollBookHighlightOverlay scrollBookHighlightOverlay;
 	private final DebugOverlayPanel debugOverlayPanel;
 
 	public PluginOverlays(
@@ -30,6 +31,7 @@ public final class PluginOverlays
 		BankItemHighlightOverlay bankItemHighlightOverlay,
 		SpellbookHighlightOverlay spellbookHighlightOverlay,
 		InventoryHighlightOverlay inventoryHighlightOverlay,
+		ScrollBookHighlightOverlay scrollBookHighlightOverlay,
 		DebugOverlayPanel debugOverlayPanel)
 	{
 		this.pathOverlay = pathOverlay;
@@ -39,6 +41,7 @@ public final class PluginOverlays
 		this.bankItemHighlightOverlay = bankItemHighlightOverlay;
 		this.spellbookHighlightOverlay = spellbookHighlightOverlay;
 		this.inventoryHighlightOverlay = inventoryHighlightOverlay;
+		this.scrollBookHighlightOverlay = scrollBookHighlightOverlay;
 		this.debugOverlayPanel = debugOverlayPanel;
 	}
 
@@ -56,6 +59,7 @@ public final class PluginOverlays
 		overlayManager.add(bankItemHighlightOverlay);
 		overlayManager.add(spellbookHighlightOverlay);
 		overlayManager.add(inventoryHighlightOverlay);
+		overlayManager.add(scrollBookHighlightOverlay);
 		if (drawDebug)
 		{
 			overlayManager.add(debugOverlayPanel);
@@ -63,7 +67,7 @@ public final class PluginOverlays
 	}
 
 	/**
-	 * Removes all eight overlays unconditionally, matching the plugin's
+	 * Removes all nine overlays unconditionally, matching the plugin's
 	 * shut-down semantics — a never-registered debug panel removes as a
 	 * no-op.
 	 */
@@ -76,6 +80,7 @@ public final class PluginOverlays
 		overlayManager.remove(bankItemHighlightOverlay);
 		overlayManager.remove(spellbookHighlightOverlay);
 		overlayManager.remove(inventoryHighlightOverlay);
+		overlayManager.remove(scrollBookHighlightOverlay);
 		overlayManager.remove(debugOverlayPanel);
 	}
 

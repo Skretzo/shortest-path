@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -29,6 +30,7 @@ import net.runelite.api.ItemContainer;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.config.ConfigManager;
+import shortestpath.LogCapture;
 import shortestpath.pathfinder.BankPickupProjection;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
@@ -51,6 +53,9 @@ import shortestpath.settings.Effect;
  */
 public class ItemStateServiceTest
 {
+	@Rule
+	public final LogCapture log = new LogCapture("shortestpath.items.ItemStateService");
+
 	private static void assertEligibilityStale(ItemChange change, String what)
 	{
 		assertNotNull(what + " produces a change fact", change);
@@ -74,7 +79,7 @@ public class ItemStateServiceTest
 	public void bankContainerIsStoredAsLiveRefAndDeclaresEligibilityStale()
 	{
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
-		ItemStateService service = ItemStateService.forTesting(coordinator);
+		ItemStateService service = ItemStateTestServices.forTesting(coordinator);
 		ItemContainer bank = mock(ItemContainer.class);
 
 		service.onContainerChanged(InventoryID.BANK, bank);
@@ -87,7 +92,7 @@ public class ItemStateServiceTest
 	public void inventoryContainerDeclaresEligibilityStaleButKeepsBankRef()
 	{
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
-		ItemStateService service = ItemStateService.forTesting(coordinator);
+		ItemStateService service = ItemStateTestServices.forTesting(coordinator);
 		ItemContainer bank = mock(ItemContainer.class);
 		ItemContainer inv = mock(ItemContainer.class);
 		service.onContainerChanged(InventoryID.BANK, bank);
@@ -102,7 +107,7 @@ public class ItemStateServiceTest
 	public void wornContainerDeclaresEligibilityStaleButKeepsBankRef()
 	{
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
-		ItemStateService service = ItemStateService.forTesting(coordinator);
+		ItemStateService service = ItemStateTestServices.forTesting(coordinator);
 		ItemContainer bank = mock(ItemContainer.class);
 		ItemContainer worn = mock(ItemContainer.class);
 		service.onContainerChanged(InventoryID.BANK, bank);
@@ -117,7 +122,7 @@ public class ItemStateServiceTest
 	public void unrelatedContainerDeclaresNothingAndLeavesTheBankRef()
 	{
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
-		ItemStateService service = ItemStateService.forTesting(coordinator);
+		ItemStateService service = ItemStateTestServices.forTesting(coordinator);
 		ItemContainer bank = mock(ItemContainer.class);
 		service.onContainerChanged(InventoryID.BANK, bank);
 
@@ -131,7 +136,7 @@ public class ItemStateServiceTest
 	public void lumbridgeDiaryVarbitDeclaresEligibilityStale()
 	{
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
-		ItemStateService service = ItemStateService.forTesting(coordinator);
+		ItemStateService service = ItemStateTestServices.forTesting(coordinator);
 
 		service.onVarbitChanged(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE);
 
@@ -142,7 +147,7 @@ public class ItemStateServiceTest
 	public void runePouchRuneVarbitsDeclareEligibilityStale()
 	{
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
-		ItemStateService service = ItemStateService.forTesting(coordinator);
+		ItemStateService service = ItemStateTestServices.forTesting(coordinator);
 
 		for (int varbitId : OwnedItems.RUNE_POUCH_RUNE_VARBITS)
 		{
@@ -162,7 +167,7 @@ public class ItemStateServiceTest
 	public void runePouchAmountVarbitsDeclareEligibilityStale()
 	{
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
-		ItemStateService service = ItemStateService.forTesting(coordinator);
+		ItemStateService service = ItemStateTestServices.forTesting(coordinator);
 
 		for (int varbitId : OwnedItems.RUNE_POUCH_AMOUNT_VARBITS)
 		{
@@ -182,7 +187,7 @@ public class ItemStateServiceTest
 	public void unrelatedVarbitDeclaresNothing()
 	{
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
-		ItemStateService service = ItemStateService.forTesting(coordinator);
+		ItemStateService service = ItemStateTestServices.forTesting(coordinator);
 
 		service.onVarbitChanged(VarbitID.FAIRY2_QUEENCURE_QUEST);
 
@@ -192,7 +197,7 @@ public class ItemStateServiceTest
 	@Test
 	public void noteBankContainerSeedsTheBankRefForHarnesses()
 	{
-		ItemStateService service = ItemStateService.forTesting();
+		ItemStateService service = ItemStateTestServices.forTesting();
 		ItemContainer bank = mock(ItemContainer.class);
 
 		service.noteBankContainer(bank);
@@ -204,7 +209,7 @@ public class ItemStateServiceTest
 	public void changeFactExposesKeyAndEffectsAsAValue()
 	{
 		RefreshCoordinator coordinator = mock(RefreshCoordinator.class);
-		ItemStateService service = ItemStateService.forTesting(coordinator);
+		ItemStateService service = ItemStateTestServices.forTesting(coordinator);
 
 		service.onContainerChanged(InventoryID.BANK, mock(ItemContainer.class));
 		service.onContainerChanged(InventoryID.BANK, mock(ItemContainer.class));
@@ -256,7 +261,7 @@ public class ItemStateServiceTest
 	@Test
 	public void noteLastSeenBankCapturesContentsWhileOpen()
 	{
-		ItemStateService service = ItemStateService.forTesting();
+		ItemStateService service = ItemStateTestServices.forTesting();
 
 		service.noteLastSeenBank(containerWith(new Item(4151, 3), new Item(13121, 1)), true);
 
@@ -267,7 +272,7 @@ public class ItemStateServiceTest
 	public void noteLastSeenBankPersistsSortedCsvUnderRsProfile()
 	{
 		ConfigManager config = mock(ConfigManager.class);
-		ItemStateService service = ItemStateService.forTesting(mock(RefreshCoordinator.class), config);
+		ItemStateService service = ItemStateTestServices.forTesting(mock(RefreshCoordinator.class), config);
 
 		service.noteLastSeenBank(containerWith(new Item(13121, 1), new Item(4151, 3)), true);
 
@@ -279,7 +284,7 @@ public class ItemStateServiceTest
 	public void noteLastSeenBankWhileClosedLeavesTheSnapshotUntouched()
 	{
 		ConfigManager config = mock(ConfigManager.class);
-		ItemStateService service = ItemStateService.forTesting(mock(RefreshCoordinator.class), config);
+		ItemStateService service = ItemStateTestServices.forTesting(mock(RefreshCoordinator.class), config);
 		service.noteLastSeenBank(containerWith(items(13121)), true);
 
 		// The post-close event arrives carrying an emptied container — the
@@ -295,7 +300,7 @@ public class ItemStateServiceTest
 	public void emptiedBankWhileOpenPersistsAsAnUnset()
 	{
 		ConfigManager config = mock(ConfigManager.class);
-		ItemStateService service = ItemStateService.forTesting(mock(RefreshCoordinator.class), config);
+		ItemStateService service = ItemStateTestServices.forTesting(mock(RefreshCoordinator.class), config);
 		service.noteLastSeenBank(containerWith(items(13121)), true);
 
 		// A legitimately emptied bank (opened with zero items) must replace
@@ -312,7 +317,7 @@ public class ItemStateServiceTest
 		ConfigManager config = mock(ConfigManager.class);
 		when(config.getRSProfileConfiguration("shortestpath", "lastSeenBankItems"))
 			.thenReturn("13121:1,4151:3");
-		ItemStateService service = ItemStateService.forTesting(mock(RefreshCoordinator.class), config);
+		ItemStateService service = ItemStateTestServices.forTesting(mock(RefreshCoordinator.class), config);
 
 		service.loadFromProfile();
 
@@ -325,7 +330,7 @@ public class ItemStateServiceTest
 		ConfigManager config = mock(ConfigManager.class);
 		when(config.getRSProfileConfiguration("shortestpath", "lastSeenBankItems"))
 			.thenReturn("13121:1");
-		ItemStateService service = ItemStateService.forTesting(mock(RefreshCoordinator.class), config);
+		ItemStateService service = ItemStateTestServices.forTesting(mock(RefreshCoordinator.class), config);
 		service.loadFromProfile();
 		assertEquals(Map.of(13121, 1), service.lastSeenBank());
 
@@ -346,7 +351,7 @@ public class ItemStateServiceTest
 		// Account A's profile holds a snapshot…
 		when(config.getRSProfileConfiguration("shortestpath", "lastSeenBankItems"))
 			.thenReturn("13121:1");
-		ItemStateService service = ItemStateService.forTesting(mock(RefreshCoordinator.class), config);
+		ItemStateService service = ItemStateTestServices.forTesting(mock(RefreshCoordinator.class), config);
 		service.loadFromProfile();
 		assertEquals(Map.of(13121, 1), service.lastSeenBank());
 
@@ -366,7 +371,7 @@ public class ItemStateServiceTest
 	public void snapshotWritesGoThroughRsProfileNeverGlobalConfig()
 	{
 		ConfigManager config = mock(ConfigManager.class);
-		ItemStateService service = ItemStateService.forTesting(mock(RefreshCoordinator.class), config);
+		ItemStateService service = ItemStateTestServices.forTesting(mock(RefreshCoordinator.class), config);
 
 		service.noteLastSeenBank(containerWith(items(13121)), true);
 
@@ -384,25 +389,30 @@ public class ItemStateServiceTest
 		ConfigManager config = mock(ConfigManager.class);
 		when(config.getRSProfileConfiguration("shortestpath", "lastSeenBankItems"))
 			.thenReturn("abc,1:x,-5:2,:7,3:,4:0,13121:1, 4151:2 ");
-		ItemStateService service = ItemStateService.forTesting(mock(RefreshCoordinator.class), config);
+		ItemStateService service = ItemStateTestServices.forTesting(mock(RefreshCoordinator.class), config);
 
 		service.loadFromProfile();
 
 		assertEquals("only the well-formed entries survive",
 			Map.of(13121, 1, 4151, 2), service.lastSeenBank());
+		assertEquals("each skipped entry is logged once, and the sibling entries are not",
+			6, log.messages().size());
+		assertEquals("ignoring malformed lastSeenBankItems entry 'abc'", log.messages().get(0));
 
 		when(config.getRSProfileConfiguration("shortestpath", "lastSeenBankItems"))
 			.thenReturn("not a csv at all");
 		service.loadFromProfile();
 		assertEquals("whole-string garbage yields an empty snapshot, never a throw",
 			Map.of(), service.lastSeenBank());
+		assertEquals("the unparseable string is logged as one malformed entry",
+			7, log.messages().size());
 	}
 
 	@Test
 	public void recapturingIdenticalContentsSkipsTheRewrite()
 	{
 		ConfigManager config = mock(ConfigManager.class);
-		ItemStateService service = ItemStateService.forTesting(mock(RefreshCoordinator.class), config);
+		ItemStateService service = ItemStateTestServices.forTesting(mock(RefreshCoordinator.class), config);
 
 		service.noteLastSeenBank(containerWith(items(13121)), true);
 		service.noteLastSeenBank(containerWith(items(13121)), true);
@@ -414,7 +424,7 @@ public class ItemStateServiceTest
 	@Test
 	public void detachedServiceCapturesInMemoryOnlyAndNeverThrows()
 	{
-		ItemStateService service = ItemStateService.forTesting();
+		ItemStateService service = ItemStateTestServices.forTesting();
 
 		service.noteLastSeenBank(containerWith(items(13121)), true);
 		assertEquals(Map.of(13121, 1), service.lastSeenBank());
@@ -427,7 +437,7 @@ public class ItemStateServiceTest
 	@Test
 	public void resetDropsTheLiveBankButKeepsTheLastSeenSnapshot()
 	{
-		ItemStateService service = ItemStateService.forTesting();
+		ItemStateService service = ItemStateTestServices.forTesting();
 		service.noteBankContainer(mock(ItemContainer.class));
 		service.noteLastSeenBank(containerWith(items(13121)), true);
 
@@ -441,7 +451,7 @@ public class ItemStateServiceTest
 	@Test
 	public void lastSeenBankMapIsImmutablePerCall()
 	{
-		ItemStateService service = ItemStateService.forTesting();
+		ItemStateService service = ItemStateTestServices.forTesting();
 		service.noteLastSeenBank(containerWith(items(13121)), true);
 
 		try
@@ -460,7 +470,7 @@ public class ItemStateServiceTest
 	public void persistedCsvRoundTripsBackThroughLoad()
 	{
 		ConfigManager config = mock(ConfigManager.class);
-		ItemStateService writer = ItemStateService.forTesting(mock(RefreshCoordinator.class), config);
+		ItemStateService writer = ItemStateTestServices.forTesting(mock(RefreshCoordinator.class), config);
 		writer.noteLastSeenBank(containerWith(new Item(13121, 2), new Item(4151, 3)), true);
 
 		ArgumentCaptor<Object> written = ArgumentCaptor.forClass(Object.class);
@@ -469,7 +479,7 @@ public class ItemStateServiceTest
 
 		when(config.getRSProfileConfiguration("shortestpath", "lastSeenBankItems"))
 			.thenReturn((String) written.getValue());
-		ItemStateService reader = ItemStateService.forTesting(mock(RefreshCoordinator.class), config);
+		ItemStateService reader = ItemStateTestServices.forTesting(mock(RefreshCoordinator.class), config);
 		reader.loadFromProfile();
 
 		assertEquals(Map.of(13121, 2, 4151, 3), reader.lastSeenBank());
@@ -492,7 +502,7 @@ public class ItemStateServiceTest
 
 	private static ItemStateService serviceWithBank()
 	{
-		ItemStateService service = ItemStateService.forTesting();
+		ItemStateService service = ItemStateTestServices.forTesting();
 		service.noteBankContainer(mock(ItemContainer.class));
 		return service;
 	}
@@ -511,7 +521,7 @@ public class ItemStateServiceTest
 		List<PathStep> path = List.of(new PathStep(999, BankVisitState.CARRIED));
 
 		assertNull("no open bank means no projection",
-			pickup(projection, ItemStateService.forTesting(), config, path, 0));
+			pickup(projection, ItemStateTestServices.forTesting(), config, path, 0));
 
 		ItemStateService service = serviceWithBank();
 		assertNull("null path is rejected", pickup(projection, service, config, null, 0));

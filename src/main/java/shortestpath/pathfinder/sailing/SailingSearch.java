@@ -3,13 +3,8 @@ package shortestpath.pathfinder.sailing;
 import java.util.Arrays;
 
 import static net.runelite.api.Constants.REGION_SIZE;
-import shortestpath.PrimitiveIntList;
-import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.BankVisitState;
-import shortestpath.pathfinder.CollisionMap;
-import shortestpath.pathfinder.NodeGraph;
-import shortestpath.pathfinder.SplitFlagMap;
-import shortestpath.pathfinder.VisitedTiles;
+import shortestpath.*;
+import shortestpath.pathfinder.*;
 
 /**
  * One sailing search's moves, boat, targets and when it counts as arriving (see {@link SailingPathfinder}).
@@ -37,8 +32,9 @@ final class SailingSearch
 	/** The boat's hull, or {@code null} to keep only the boat's centre clear. */
 	final BoatHull hull;
 	private final int[] targets;
-	// The targets plus their fallback tiles: the search can also end by landing on one of them
-	private final int[] goals;
+	// The targets plus their fallback tiles: the search can also end by landing on one of them. Set when the
+	// search runs, once its goals are resolved
+	private int[] goals;
 	// The heading the boat is facing where the route starts, or -1 when that isn't known: the start node has no
 	// move to face, so without it a target under the hull counts as arrived facing any heading — even one the
 	// boat, berthed, isn't pointing
@@ -74,6 +70,12 @@ final class SailingSearch
 		queuedCosts[1] = new int[regions][];
 		queuedArrivals[0] = new int[regions][];
 		queuedArrivals[1] = new int[regions][];
+	}
+
+	/** Sets the goal tiles the estimate aims for, once the search has resolved them. */
+	void setGoals(int[] goals)
+	{
+		this.goals = goals;
 	}
 
 	/**

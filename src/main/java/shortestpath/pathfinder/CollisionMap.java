@@ -8,14 +8,25 @@ public class CollisionMap
 	private final SplitFlagMap collisionData;
 
 	/**
-	 * The region grid bounds to scan when enumerating every collision tile (e.g.
-	 * {@link shortestpath.pathfinder.astar.RoutingStaticBuilder}). Delegates to
+	 * The region grid bounds to scan when enumerating every collision tile. Only the
+	 * routing-component generator in the test sources (and its tests) call it, but it stays on the
+	 * production class because the generator takes a plain {@code CollisionMap}; do not remove it as
+	 * dead code. Delegates to
 	 * {@link SplitFlagMap#getRegionExtents()} by default; overridable so tests can substitute a
 	 * small synthetic extent without touching that shared static state.
 	 */
 	public SplitFlagMap.RegionExtent regionExtent()
 	{
 		return SplitFlagMap.getRegionExtents();
+	}
+
+	/**
+	 * A digest of the collision data, used to tie derived data (the routing component layer) to the
+	 * map it was generated from. Overridable so synthetic test maps can supply their own.
+	 */
+	public long fingerprint()
+	{
+		return collisionData.fingerprint();
 	}
 
 	public byte getRegionPlaneCounts(int regionIndex)
@@ -60,11 +71,6 @@ public class CollisionMap
 	public boolean wallE(int x, int y, int z)
 	{
 		return get(x, y, z, SplitFlagMap.FLAG_WALL_EAST);
-	}
-
-	public boolean wallW(int x, int y, int z)
-	{
-		return wallE(x - 1, y, z);
 	}
 
 	private boolean ne(int x, int y, int z)

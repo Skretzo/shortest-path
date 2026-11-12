@@ -168,6 +168,7 @@ public class TransportCountingTest
 	public void testNumberOfQuetzalWhistles()
 	{
 		int actualCount = 0;
+		int consumableCount = 0;
 		for (int origin : transports.keySet())
 		{
 			for (Transport transport : transports.get(origin))
@@ -175,15 +176,17 @@ public class TransportCountingTest
 				if (TransportType.QUETZAL_WHISTLE.equals(transport.getType()))
 				{
 					actualCount++;
+					if (transport.isConsumable()) consumableCount++;
 				}
 			}
 		}
 		/*
 		 * 8 always-available destinations (after Twilight's Promise)
 		 * + 6 destinations requiring a built platform
-		 * = 14
+		 * = 14 destinations, each with a charged and an infinite whistle variant
 		 */
-		assertEquals(14, actualCount);
+		assertEquals(28, actualCount);
+		assertEquals(14, consumableCount);
 	}
 
 	@Test

@@ -1,19 +1,16 @@
 package shortestpath.overlay;
 
+import shortestpath.settings.ConfigKey;
 import com.google.inject.Inject;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.util.List;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
 
-import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.PathStep;
-import shortestpath.presentation.BankPickupRequirements;
-import shortestpath.presentation.PathAnnotator;
+import shortestpath.pathfinder.*;
+import shortestpath.presentation.*;
 import shortestpath.scheduler.PathScheduler;
 import shortestpath.settings.Settings;
 
@@ -35,7 +32,7 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 	@Override
 	protected boolean enabled()
 	{
-		return settings.display().highlightBankPickupItems();
+		return settings.bool(ConfigKey.HIGHLIGHT_BANK_PICKUP_ITEMS);
 	}
 
 	@Override
@@ -77,7 +74,7 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 		// render pass — the template always calls extraGatesPass before
 		// drawHighlights, so the widget is non-null here (the gate returns
 		// false on a null/hidden container).
-		Color highlight = settings.display().colourBankPickupHighlight();
+		Color highlight = settings.get(ConfigKey.COLOUR_BANK_PICKUP_HIGHLIGHT);
 		drawItemOutlines(graphics, itemManager, bankContainer.getChildren(), pickup.bankItemIds,
 			highlight);
 

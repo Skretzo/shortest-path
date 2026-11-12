@@ -1,16 +1,9 @@
 package shortestpath.presentation;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
-import net.runelite.api.Client;
-import net.runelite.api.ItemContainer;
-import shortestpath.pathfinder.BankPickupAnalysis;
-import shortestpath.pathfinder.PathStep;
-import shortestpath.pathfinder.PathfinderConfig;
+import net.runelite.api.*;
+import shortestpath.pathfinder.*;
 import shortestpath.requirement.model.TransportItems;
 
 /**
@@ -113,7 +106,7 @@ public final class BankPickupRequirements
 		{
 			int itemId = entry.getKey();
 			long qty = entry.getValue();
-			// A detached (forTesting) item-state service passes no client —
+			// A detached item-state service passes no client —
 			// degrade to the placeholder name rather than throwing.
 			String itemName = client == null ? null : client.getItemDefinition(itemId).getName();
 			if (itemName == null || itemName.isEmpty() || "null".equals(itemName))

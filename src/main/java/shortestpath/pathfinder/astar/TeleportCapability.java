@@ -35,9 +35,6 @@ public enum TeleportCapability
 		this.castLevel = castLevel;
 	}
 
-	/** The wilderness level legacy checks a global teleport against in this band. */
-
-
 	/** Whether {@code transport} can be cast as a global teleport in this band. */
 	public boolean canCast(Transport transport)
 	{
@@ -50,11 +47,10 @@ public enum TeleportCapability
 		return castLevel <= required.castLevel;
 	}
 
-	// {left, bottom, width, height}: above ground, then underground.
-	static final int[][] ABOVE_LEVEL_30 = {{2944, 3760, 448, 448}, {2944, 10155, 518, 221}};
-	static final int[][] ABOVE_LEVEL_20 = {{2944, 3680, 448, 448}, {2944, 10075, 518, 301}};
-	static final int[][] WILDERNESS = {{2944, 3525, 448, 448}, {2944, 9918, 518, 458}};
-	/** Inside the above-ground wilderness area but not wilderness: Ferox Enclave and its south edge. */
+	/**
+	 * {left, bottom, width, height} areas inside the above-ground wilderness area that are not
+	 * wilderness: Ferox Enclave and its south edge.
+	 */
 	static final int[][] NOT_WILDERNESS = {{3123, 3622, 2, 10}, {3125, 3617, 16, 23}, {3138, 3636, 18, 10},
 		{3141, 3625, 14, 11}, {3141, 3619, 7, 6}, {2997, 3525, 34, 9}, {3005, 3534, 21, 10}, {3000, 3534, 5, 5},
 		{3031, 3525, 2, 2}};
@@ -66,7 +62,7 @@ public enum TeleportCapability
 
 	static TeleportCapability at(int x, int y)
 	{
-		// Unrolled WILDERNESS, ABOVE_LEVEL_30 and ABOVE_LEVEL_20.
+		// The wilderness areas and the level 30 and level 20 bands, unrolled; NOT_WILDERNESS cuts out of the first.
 		if (x < 2944 || x >= 3462 || y < 3525) return ALL;
 		if (y >= 9918)
 		{
@@ -79,35 +75,6 @@ public enum TeleportCapability
 		if (y >= 3973 || inAny(NOT_WILDERNESS, x, y)) return ALL;
 		return OVER_0;
 	}
-
-	/** The areas a tile must lie outside of all of, or inside a {@link #holes() hole}, to allow this capability. */
-	int[][] excludedAreas()
-	{
-		switch (this)
-		{
-			case OVER_30:
-				return new int[0][];
-			case OVER_20:
-				return ABOVE_LEVEL_30;
-			case OVER_0:
-				return EXCLUDED_FROM_OVER_0;
-			case ALL:
-			default:
-				return EXCLUDED_FROM_ALL;
-		}
-	}
-
-	/** Areas inside {@link #excludedAreas()} that still allow this capability. */
-	int[][] holes()
-	{
-		return this == ALL ? NOT_WILDERNESS : new int[0][];
-	}
-
-	// The level-30 area reaches further north than the level-20 and wilderness ones, so all are excluded.
-	private static final int[][] EXCLUDED_FROM_OVER_0 = {ABOVE_LEVEL_30[0], ABOVE_LEVEL_30[1], ABOVE_LEVEL_20[0],
-		ABOVE_LEVEL_20[1]};
-	private static final int[][] EXCLUDED_FROM_ALL = {ABOVE_LEVEL_30[0], ABOVE_LEVEL_30[1], ABOVE_LEVEL_20[0],
-		ABOVE_LEVEL_20[1], WILDERNESS[0], WILDERNESS[1]};
 
 	static boolean inAny(int[][] areas, int x, int y)
 	{

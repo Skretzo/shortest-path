@@ -1,7 +1,6 @@
 package shortestpath.pathfinder;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * The plugin-facing handle for an active route search.

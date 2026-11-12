@@ -1,23 +1,19 @@
 package shortestpath.pathfinder.astar;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
+import java.io.*;
+import java.nio.*;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Objects;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
+import java.util.*;
+import lombok.*;
 import lombok.experimental.Accessors;
 
 /**
  * Separator cut edges for the A* backend, stored as {@code routing-cuts.bin}.
  *
- * <p>The cuts are generated offline with KaHIP by the tooling repository and committed next to
- * {@code collision-map.zip}. They only affect performance: {@link RoutingStaticBuilder} ignores
- * cuts that are no longer walking edges or no longer separate anything, so stale cuts never make
- * routes wrong.
+ * <p>The cuts are generated offline with KaHIP by the tooling repository and committed in
+ * {@code src/test/resources} as an offline input of the routing-component generator. They only
+ * affect performance: {@link RoutingStaticBuilder} ignores cuts that are no longer walking edges or
+ * no longer separate anything, so stale cuts never make routes wrong.
  *
  * <p>Format, all little-endian:
  * <pre>
@@ -109,7 +105,7 @@ public final class RoutingCuts
 		return pairs.clone();
 	}
 
-	/** No cuts at all: builds without separators, so it only costs performance. */
+	/** No cuts at all: the generated layer has no separators and no crossings. */
 	public static RoutingCuts empty()
 	{
 		return new RoutingCuts(0, new Parameters(0, 0, 0, 0, 0, ""), new int[0]);
@@ -117,9 +113,9 @@ public final class RoutingCuts
 
 	/**
 	 * Loads the packaged {@code routing-cuts.bin}, or an empty index when the jar does not
-	 * contain it: missing cuts only affect build performance, never the routes. A corrupt
-	 * resource still fails loudly, since that indicates a broken build rather than an
-	 * optional one.
+	 * contain it. Missing cuts are not harmless for the generator: the layer it writes then has
+	 * no crossings, which {@code RoutingComponentsFreshnessTest} rejects. A corrupt resource
+	 * fails loudly, since that indicates a broken build rather than an optional one.
 	 */
 	public static RoutingCuts loadFromResources()
 	{

@@ -12,7 +12,7 @@ import shortestpath.pathfinder.astar.CostArithmetic;
 import shortestpath.pathfinder.astar.AStarForwardSearch;
 import shortestpath.pathfinder.astar.PreparedHeuristic;
 import shortestpath.pathfinder.astar.PreparedRoutingAccount;
-import shortestpath.pathfinder.astar.ReverseLabels;
+import shortestpath.pathfinder.astar.ReverseLabelsOracle;
 import shortestpath.pathfinder.astar.RoutingStatic;
 import shortestpath.pathfinder.astar.RoutingStaticTestFixture;
 import shortestpath.pathfinder.astar.SearchRestrictions;
@@ -104,7 +104,7 @@ public class AStarForwardSearchTest
 		BooleanSupplier cancelled = () -> true;
 
 		AStarForwardSearch.Result result = AStarForwardSearch.search(target,
-			PreparedHeuristic.prepare(target, ReverseLabels.compute(target)), RoutingStaticTestFixture.A, cancelled, true, 1, SearchRestrictions.none(), AStarForwardSearch.NO_PROGRESS, (tile, banked) -> target.isTarget(tile));
+			PreparedHeuristic.prepare(target, ReverseLabelsOracle.compute(target)), RoutingStaticTestFixture.A, cancelled, true, 1, SearchRestrictions.none(), AStarForwardSearch.NO_PROGRESS, (tile, banked) -> target.isTarget(tile));
 
 		assertTrue(result.cancelled());
 		assertFalse(result.reached());
@@ -113,7 +113,7 @@ public class AStarForwardSearchTest
 
 	private static AStarForwardSearch.Result search(TargetOverlay target, int start)
 	{
-		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, ReverseLabels.compute(target));
+		PreparedHeuristic heuristic = PreparedHeuristic.prepare(target, ReverseLabelsOracle.compute(target));
 		return AStarForwardSearch.search(target, heuristic, start);
 	}
 

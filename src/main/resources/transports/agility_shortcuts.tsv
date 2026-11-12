@@ -425,6 +425,10 @@
 1631 3813 1	1631 3811 0	Jump-down Railing 28373	52 Agility					
 1633 3813 1	1633 3811 0	Jump-down Railing 28374	52 Agility					
 1635 3813 1	1635 3811 0	Jump-down Railing 28373	52 Agility					
+# Great Conch eastern plateau								
+# shortcut: landing tiles inferred from obstacle placements; confirm with in-game captures.								
+3235 2390 0	3235 2386 0	Climb Rocks 57931	52 Agility				3	
+3235 2386 0	3235 2390 0	Climb Rocks 57932	52 Agility				3	
 2874 3133 0	2874 3127 0	Grapple Strong Tree 17074	53 Agility;42 Ranged;21 Strength	CROSSBOW=1&MITH_GRAPPLE=1				
 2874 3127 0	2874 3133 0	Grapple Strong Tree 17074	53 Agility;42 Ranged;21 Strength	CROSSBOW=1&MITH_GRAPPLE=1				
 2874 3136 0	2874 3142 0	Grapple Strong Tree 17074	53 Agility;42 Ranged;21 Strength	CROSSBOW=1&MITH_GRAPPLE=1				
@@ -435,6 +439,10 @@
 3396 3155 0	3391 3155 0	Climb Rocks 62404	54 Agility					
 2573 3859 0	2575 3861 0	Cross Stepping stone 11768	55 Agility					
 2575 3861 0	2573 3859 0	Cross Stepping stone 11768	55 Agility					
+# Cape Conch								
+# shortcut: landing tiles inferred from obstacle placements; confirm with in-game captures.								
+3272 2333 0	3272 2327 0	Climb Rocks 57929	55 Agility				3	
+3272 2327 0	3272 2333 0	Climb Rocks 57930	55 Agility				3	
 2682 9548 0	2690 9547 0	Cross Stepping stone 19040	56 Agility				4	
 2697 9525 0	2695 9533 0	Cross Stepping stone 19040	56 Agility				4	
 2188 3162 0	2188 3165 0	Enter Dense forest 3999	56 Agility				4	
@@ -495,6 +503,10 @@
 2598 9494 0	2598 9489 0	Swing across Monkeybars 23567	57 Agility				6	
 2599 9489 0	2599 9494 0	Swing across Monkeybars 23567	57 Agility				6	
 2599 9494 0	2599 9489 0	Swing across Monkeybars 23567	57 Agility				6	
+# Great Conch eastern rocks								
+# shortcut: landing tiles inferred from obstacle placements; confirm with in-game captures.								
+3254 2398 0	3260 2398 0	Climb Rocks 57933	57 Agility				3	
+3260 2398 0	3254 2398 0	Climb Rocks 57934	57 Agility				3	
 3670 9888 3	3671 9888 2	Jump-down Weathered wall 16526	58 Agility					
 3671 9888 2	3670 9888 3	Jump-up Weathered wall 16525	58 Agility					
 2346 3300 0	2344 3294 0	Climb Rocks 16515	59 Agility				6	
@@ -535,6 +547,9 @@
 3422 3551 1	3422 3551 0	Climb-down Spikey chain 16538	61 Agility					
 3422 3549 1	3422 3549 0	Climb-down Spikey chain 16538	61 Agility					
 3423 3550 1	3423 3550 0	Climb-down Spikey chain 16538	61 Agility					
+# Great Conch stepping stone								
+3206 2395 0	3212 2395 0	Cross Stepping stone 57936	61 Agility				3	
+3212 2395 0	3206 2395 0	Cross Stepping stone 57936	61 Agility				3	
 3289 2700 0	3295 2700 0	Cross Stepping stone 43989	62 Agility					
 3295 2700 0	3289 2700 0	Cross Stepping stone 43989	62 Agility					
 3295 2704 0	3295 2708 0	Cross Stepping stone 43990	62 Agility					
@@ -571,7 +586,7 @@
 2918 3672 0	2915 3672 0	Climb Rocks 16545	64 Agility					
 2921 3672 0	2924 3673 0	Climb Rocks 16545	64 Agility					
 2924 3673 0	2921 3672 0	Climb Rocks 16545	64 Agility					
-2946 3678 0	2949 3681 0	Climb Rocks 16545	64 Agility					
+2946 3678 0	2950 3681 0	Climb Rocks 16545	64 Agility					
 3778 3821 0	3784 3821 0	Climb Up Rope anchor 30916	64 Agility				6	
 3784 3821 0	3778 3821 0	Climb Down Rope anchor 30917	64 Agility				6	
 1308 9782 0	1309 9786 0	Cross Stepping stone 57277	64 Agility					Shadows of Custodia
@@ -609,8 +624,6 @@
 2869 3428 0	2866 3428 0	Climb Rocks 62424	68 Agility					
 1761 3874 0	1761 3872 0	Climb Rocks 34741	69 Agility				2	
 1761 3872 0	1761 3874 0	Climb Rocks 34741	69 Agility				2	
-3565 3379 0	3562 3379 0	Jump-over Rocks 57666	69 Agility		7255=138			
-3562 3379 0	3565 3379 0	Jump-over Inconspicuous rocks (master) 29044	69 Agility		7255=138			
 3504 3559 0	3504 3562 0	Cross Bridge 57717	69 Agility		4441=2;5023=2		4	
 3504 3562 0	3504 3559 0	Cross Bridge 57716	69 Agility		4441=2;5023=2		4	
 3503 3559 0	3503 3562 0	Cross Bridge 57718	69 Agility		4441=2;5023=2		4	
@@ -657,6 +670,10 @@
 3035 9558 0	3026 9571 0	Enter Tunnel 42506	72 Agility				1	
 3036 9558 0	3026 9571 0	Enter Tunnel 42506	72 Agility				1	
 2841 3427 0	2841 3433 0	Swim-to Shore 62421	72 Agility					
+# Barrows dry stone wall								
+# shortcut: landing tiles inferred from obstacle placements; confirm with in-game captures.								
+3545 3282 0	3547 3282 0	Jump-Across Dry stone wall 53256	72 Agility					
+3547 3282 0	3545 3282 0	Jump-Across Dry stone wall 53256	72 Agility					
 1742 3854 0	1752 3854 0	Climb Rocks 27984	73 Agility				4	
 2838 3693 0	2844 3693 0	Climb Rocks 16464	73 Agility					
 2844 3693 0	2838 3693 0	Climb Rocks 16464	73 Agility					
@@ -711,6 +728,9 @@
 3339 2981 0	3348 2981 0	Climb-down Slope 62415	83 Agility					
 2832 3247 0	2832 3252 0	Climb Rocks 53234	84 Agility				6	
 2832 3252 0	2832 3247 0	Climb Rocks 53236	84 Agility				6	
+## Deepfin Mine dungeon crevice: 84 Agility								
+2076 9203 0	2082 9203 0	Squeeze-through Crevice 60146	84 Agility					
+2082 9203 0	2076 9203 0	Squeeze-through Crevice 60146	84 Agility					
 ## Iorwerth Dungeon southern gap: 84 Agility								
 3232 12420 0	3242 12420 0	Pass Tight Gap 36695	84 Agility					
 3242 12420 0	3232 12420 0	Pass Tight Gap 36694	84 Agility					
@@ -718,6 +738,8 @@
 2332 3252 0	2338 3253 0	Climb Rocks 16514	85 Agility				6	
 2547 3749 0	2547 3744 0	Climb Rocks 53252	85 Agility				5	
 2547 3744 0	2547 3749 0	Climb Rocks 53254	85 Agility				5	
+3565 3379 0	3562 3379 0	Jump-over Rocks 57666	86 Agility		7255=138			
+3562 3379 0	3565 3379 0	Jump-over Inconspicuous rocks (master) 29044	86 Agility		7255=138			
 3500 9510 2	3506 9505 2	Squeeze-through Crevice 16465	86 Agility					
 3506 9505 2	3500 9510 2	Squeeze-through Crevice 16465	86 Agility					
 2770 9340 0	2764 9339 0	Squeeze-through Crevice 53242	96 Agility					Legends' Quest

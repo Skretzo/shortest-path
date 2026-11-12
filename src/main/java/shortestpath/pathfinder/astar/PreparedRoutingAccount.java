@@ -1,15 +1,11 @@
 package shortestpath.pathfinder.astar;
 
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.*;
 import java.util.function.ToIntFunction;
 import shortestpath.PrimitiveIntHashMap;
-import shortestpath.pathfinder.BankVisitState;
-import shortestpath.pathfinder.TransportAvailability;
+import shortestpath.pathfinder.*;
 import shortestpath.transport.Transport;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.*;
 import lombok.experimental.Accessors;
 
 /** Immutable account/config snapshot used by the A* graph. */

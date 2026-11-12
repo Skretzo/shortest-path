@@ -1,80 +1,32 @@
 package shortestpath;
 
-import java.awt.BorderLayout;
-import java.awt.CardLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Insets;
+import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.EnumSet;
-import java.util.LinkedHashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JSpinner;
-import javax.swing.ScrollPaneConstants;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
-import javax.swing.border.BevelBorder;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.MatteBorder;
-import javax.swing.border.SoftBevelBorder;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import net.runelite.api.Client;
-import net.runelite.api.MenuAction;
+import javax.swing.*;
+import javax.swing.border.*;
+import javax.swing.event.*;
+import net.runelite.api.*;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.SpriteID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.events.OverlayMenuClicked;
-import net.runelite.client.game.ItemManager;
-import net.runelite.client.game.SpriteManager;
+import net.runelite.client.game.*;
 import net.runelite.client.plugins.Plugin;
-import net.runelite.client.ui.ColorScheme;
-import net.runelite.client.ui.DynamicGridLayout;
-import net.runelite.client.ui.FontManager;
-import net.runelite.client.ui.PluginPanel;
-import net.runelite.client.ui.components.DimmableJPanel;
-import net.runelite.client.ui.components.IconTextField;
-import net.runelite.client.ui.overlay.Overlay;
-import net.runelite.client.ui.overlay.OverlayMenuEntry;
-import net.runelite.client.util.AsyncBufferedImage;
-import net.runelite.client.util.ImageUtil;
-import net.runelite.client.util.LinkBrowser;
-import lombok.AccessLevel;
-import lombok.Getter;
+import net.runelite.client.ui.*;
+import net.runelite.client.ui.components.*;
+import net.runelite.client.ui.overlay.*;
+import net.runelite.client.util.*;
+import lombok.*;
 import lombok.experimental.Accessors;
 import shortestpath.items.ItemStateService;
-import shortestpath.settings.ConfigItems;
-import shortestpath.settings.Settings;
-import shortestpath.settings.TeleportationItem;
-import shortestpath.poh.PohMountedItem;
-import shortestpath.poh.PohNexusPortal;
+import shortestpath.settings.*;
+import shortestpath.poh.*;
 import shortestpath.transport.BalloonRoute;
 
 /**
@@ -529,7 +481,7 @@ public class ShortestPathPanel extends PluginPanel
 				return on + "/" + total + " on";
 			case "Teleport Restrictions":
 				if (TeleportationItem.NONE.equals(
-					settings.configuredValue("useTeleportationItems")))
+					settings.configured("useTeleportationItems")))
 				{
 					return "Items disabled";
 				}
@@ -537,7 +489,7 @@ public class ShortestPathPanel extends PluginPanel
 					? 0 : restrictionListPanel.restrictionCount();
 				return restricted == 0 ? "All allowed" : restricted + " restricted";
 			case "Player-Owned House":
-				return settings.configuredBool("usePoh") ? "On" : "Off";
+				return Boolean.TRUE.equals(settings.configured("usePoh")) ? "On" : "Off";
 			default:
 				return "";
 		}
@@ -725,7 +677,7 @@ public class ShortestPathPanel extends PluginPanel
 		String description = item == null ? "" : item.description();
 
 		JCheckBox checkBox = new JCheckBox();
-		checkBox.setSelected(settings.configuredBool(keyName));
+		checkBox.setSelected(Boolean.TRUE.equals(settings.configured(keyName)));
 		checkBox.setToolTipText(html(description));
 		PanelRows.controlRow(this, keyName, checkBox,
 			(control, guard) -> control.addActionListener(e ->
@@ -735,7 +687,7 @@ public class ShortestPathPanel extends PluginPanel
 				PanelRows.guardedWrite(guard,
 					() -> settings.write(keyName, control.isSelected()));
 			}),
-			() -> checkBox.setSelected(settings.configuredBool(keyName)),
+			() -> checkBox.setSelected(Boolean.TRUE.equals(settings.configured(keyName))),
 			onChange);
 		return labeledRow(name, description, checkBox);
 	}
@@ -746,7 +698,7 @@ public class ShortestPathPanel extends PluginPanel
 		String name = configName(keyName);
 		String description = item == null ? "" : item.description();
 
-		Object value = settings.configuredValue(keyName);
+		Object value = settings.configured(keyName);
 		int current = value instanceof Number ? ((Number) value).intValue() : 0;
 		// The declared range is honoured verbatim: keys like
 		// recalculateDistance/finishDistance take a negative min whose
@@ -769,7 +721,7 @@ public class ShortestPathPanel extends PluginPanel
 					() -> settings.write(keyName, control.getValue()))),
 			() ->
 			{
-				Object updated = settings.configuredValue(keyName);
+				Object updated = settings.configured(keyName);
 				if (updated instanceof Number)
 				{
 					// Same clamp as construction: an out-of-range external
@@ -790,7 +742,7 @@ public class ShortestPathPanel extends PluginPanel
 		String name = configName(keyName);
 		String description = item == null ? "" : item.description();
 
-		Object value = settings.configuredValue(keyName);
+		Object value = settings.configured(keyName);
 		if (!(value instanceof Enum))
 		{
 			// A null or corrupt persisted value gives no enum type to derive
@@ -814,7 +766,7 @@ public class ShortestPathPanel extends PluginPanel
 						() -> settings.write(keyName, control.getSelectedItem()));
 				}
 			}),
-			() -> combo.setSelectedItem(settings.configuredValue(keyName)),
+			() -> combo.setSelectedItem(settings.configured(keyName)),
 			null);
 		return labeledRow(name, description, combo);
 	}
@@ -926,7 +878,7 @@ public class ShortestPathPanel extends PluginPanel
 	<E extends Enum<E>> Set<E> currentSet(String keyName, Class<E> type)
 	{
 		Set<E> set = EnumSet.noneOf(type);
-		Set<?> value = settings.configuredSet(keyName);
+		Set<?> value = settings.configured(keyName);
 		if (value != null)
 		{
 			set.addAll((Set<E>) value);

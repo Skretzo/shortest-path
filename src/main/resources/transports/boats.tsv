@@ -1,7 +1,9 @@
 # Origin	Destination	menuOption menuTarget objectID	Skills	Items	Quests	Varbits	Duration	Display info
 # Fishing Platform								
-2720 3301 0	2782 3273 0	Travel Holgart 7789			Sea Slug		9	
-2782 3273 0	2720 3301 0	Travel Holgart 5070			Sea Slug		9	
+2720 3301 0	2782 3273 0	Travel Holgart 7789			Sea Slug	2614=0	9	
+2782 3273 0	2720 3301 0	Travel Holgart 5070			Sea Slug	2614=0	9	
+2720 3301 0	2782 3273 0	Travel Jeb 4803			Sea Slug	2614=1	9	
+2782 3273 0	2720 3301 0	Travel Jeb 4803			Sea Slug	2614=1	9	
 								
 # Post Phasmatys, Braindeath Island								
 3680 3536 0	2162 5114 1	Talk-to Pirate Pete 601			Rum Deal		9	
@@ -97,10 +99,10 @@
 3148 2842 0	3272 3143 0	Board Ferry 41311					8	
 								
 # Stranglewood, Mount Quidamortem								
-1229 3470 0	1194 3452 0	Travel Rowboat 48721			Desert Treasure II - The Fallen Empire		7	
-1229 3469 0	1194 3452 0	Travel Rowboat 48721			Desert Treasure II - The Fallen Empire		7	
-1194 3452 0	1229 3469 0	Travel Rowboat 48720			Desert Treasure II - The Fallen Empire		7	
-1195 3452 0	1229 3469 0	Travel Rowboat 48720			Desert Treasure II - The Fallen Empire		7	
+1229 3470 0	1194 3452 0	Travel Rowboat 48721				15125>9	7	
+1229 3469 0	1194 3452 0	Travel Rowboat 48721				15125>9	7	
+1194 3452 0	1229 3469 0	Travel Rowboat 48720				15125>9	7	
+1195 3452 0	1229 3469 0	Travel Rowboat 48720				15125>9	7	
 								
 # Molch Island, Molch, Battlefront, Shayzien								
 1384 3665 0	1369 3639 0	Board Boaty 33614					4	Molch Island
@@ -191,3 +193,18 @@
 # Buccaneer's Haven Boat								
 2203 3803 0	2086 3689 0	Travel Rowboat 58643				18371=1	5	
 2086 3689 0	2203 3803 0	Travel Rowboat 58642				18371=1	5	
+								
+# The Great Conch rowboats (TT/18321 > 3: quest accepted; duration 6 estimated in #813)								
+3197 2531 0	3191 2370 0	Travel Rowboat 57950				18321>3	6	1: The Summer Shore.
+3197 2531 0	3264 2463 0	Travel Rowboat 57950				18321>3	6	2: Eastern Coast.
+3264 2463 0	3191 2370 0	Travel Rowboat 57951				18321>3	6	1: The Summer Shore.
+3264 2463 0	3197 2531 0	Travel Rowboat 57951				18321>3	6	2: Northern Coast.
+3265 2463 0	3191 2370 0	Travel Rowboat 57951				18321>3	6	1: The Summer Shore.
+3265 2463 0	3197 2531 0	Travel Rowboat 57951				18321>3	6	2: Northern Coast.
+3191 2370 0	3197 2531 0	Travel Rowboat 57952				18321>3	6	1: Northern Coast.
+3191 2370 0	3264 2463 0	Travel Rowboat 57952				18321>3	6	2: Eastern Coast.
+3192 2370 0	3197 2531 0	Travel Rowboat 57952				18321>3	6	1: Northern Coast.
+3192 2370 0	3264 2463 0	Travel Rowboat 57952				18321>3	6	2: Eastern Coast.
+# The Scar - Leviathan boat								
+2064 6436 0	2066 6370 0	Travel Rowboat 49212				15128>37		
+2066 6370 0	2064 6436 0	Travel Rowboat 49213						

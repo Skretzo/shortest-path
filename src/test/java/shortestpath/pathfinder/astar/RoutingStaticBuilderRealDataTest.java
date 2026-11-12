@@ -46,6 +46,23 @@ public class RoutingStaticBuilderRealDataTest
 	}
 
 	@Test
+	public void windingDungeonSitesAreJoinedByTheirWalk()
+	{
+		// The Ice Queen's Lair tunnel: its two ends are 30 tiles apart but about 185 on foot.
+		RoutingStatic mine = result.routingStatic;
+		int west = mine.siteIndex(shortestpath.WorldPointUtil.packWorldPoint(2827, 9909, 0));
+		int east = mine.siteIndex(shortestpath.WorldPointUtil.packWorldPoint(2857, 9918, 0));
+		assertTrue(west >= 0 && east >= 0);
+		int component = mine.siteComponents(west)[0];
+		assertTrue(mine.exactWalks().isExact(component));
+		int[] sites = mine.componentSites(component);
+		int[][] table = ExactWalks.pairDistances(mine, component);
+		int walk = table[Arrays.binarySearch(sites, west)][Arrays.binarySearch(sites, east)];
+		assertTrue("walk " + walk, walk > 3 * 30 && walk < CostArithmetic.INF);
+		assertTrue(result.diagnostics.exactComponentCount > 500);
+	}
+
+	@Test
 	public void mostCommittedCutsStillSeparateComponents()
 	{
 		// Cuts may lag behind collision map updates; dropped ones only cost performance.

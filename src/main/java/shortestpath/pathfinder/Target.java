@@ -3,10 +3,7 @@ package shortestpath.pathfinder;
 import java.util.List;
 import shortestpath.WorldPointUtil;
 import shortestpath.requirement.model.TransportItems;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
+import lombok.*;
 
 /**
  * A tile a search may end on, with the items the player must hold when they arrive there: a spade

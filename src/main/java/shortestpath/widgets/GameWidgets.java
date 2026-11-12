@@ -1,10 +1,8 @@
 package shortestpath.widgets;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import javax.inject.*;
 
 import net.runelite.api.Client;
 import net.runelite.api.widgets.Widget;
@@ -32,22 +30,6 @@ public class GameWidgets
 	public GameWidgets(Client client)
 	{
 		this.client = client;
-	}
-
-	private GameWidgets()
-	{
-		this(null);
-	}
-
-	/**
-	 * Test/harness seam: returns an instance detached from Guice. The
-	 * production instance is the injected singleton. Without a client the
-	 * detached instance collapses to the empty arms — {@link List#of()}
-	 * and {@code false} — and never throws.
-	 */
-	public static GameWidgets forTesting()
-	{
-		return new GameWidgets();
 	}
 
 	/**

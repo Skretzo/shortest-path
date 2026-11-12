@@ -269,4 +269,100 @@ public class AStarPathfinderBlockedTargetTest
 		assertEquals("the rock face is only usable from its cardinal neighbour",
 			WorldPointUtil.packWorldPoint(1504, 3860, 0), end(result));
 	}
+
+	// A blocked target must snap to a tile the player can use: one cardinally
+	// adjacent to it, reached for no more than the route to goodTile, a tile
+	// adjacent to the target on the side the player approaches from.
+	private void assertSnapsNoWorseThan(int start, int target, int goodTile)
+	{
+		CollisionMap map = pathfinderConfig.getMap();
+		assertTrue("test requires a blocked target tile", map.isBlocked(
+			WorldPointUtil.unpackWorldX(target), WorldPointUtil.unpackWorldY(target),
+			WorldPointUtil.unpackWorldPlane(target)));
+		PathfinderResult good = search(start, Set.of(goodTile)).getResult();
+		assertNotNull(good);
+		assertTrue("test requires the good tile to be reachable", good.isReached());
+
+		PathfinderResult snapped = search(start, Set.of(target)).getResult();
+		assertNotNull(snapped);
+		assertTrue("the blocked target must snap to a reachable tile, not to one the player cannot get to",
+			snapped.isReached());
+		assertTrue("snapped route ends on " + WorldPointUtil.unpackWorldPoint(end(snapped))
+				+ " at cost " + snapped.getPathCost() + "; " + WorldPointUtil.unpackWorldPoint(goodTile)
+				+ " costs " + good.getPathCost(),
+			snapped.getPathCost() <= good.getPathCost());
+		int end = end(snapped);
+		int dx = Math.abs(WorldPointUtil.unpackWorldX(end) - WorldPointUtil.unpackWorldX(target));
+		int dy = Math.abs(WorldPointUtil.unpackWorldY(end) - WorldPointUtil.unpackWorldY(target));
+		assertEquals("snapped route must end cardinally adjacent to the target, not on "
+			+ WorldPointUtil.unpackWorldPoint(end), 1, dx + dy);
+	}
+
+	@Test
+	public void bankBoothSnapsToPlayerSideOfCounter()
+	{
+		// Draynor bank booth: the tile behind the counter is the most enclosed
+		// candidate, so it anchors the side and the search can never reach it.
+		setup(2);
+		assertSnapsNoWorseThan(WorldPointUtil.packWorldPoint(3093, 3245, 0),
+			WorldPointUtil.packWorldPoint(3091, 3242, 0), WorldPointUtil.packWorldPoint(3092, 3242, 0));
+	}
+
+	@Test
+	public void bankBoothSnapsToPlayerSideOfBoothRow()
+	{
+		// Varrock East bank: same failure with the booths in a row along y=3419.
+		setup(2);
+		assertSnapsNoWorseThan(WorldPointUtil.packWorldPoint(3251, 3421, 0),
+			WorldPointUtil.packWorldPoint(3251, 3419, 0), WorldPointUtil.packWorldPoint(3251, 3420, 0));
+	}
+
+	@Test
+	public void barPumpsSnapToCustomerSideOfBar()
+	{
+		// Rising Sun Inn, Falador: the bar pumps snap behind the bar.
+		setup(2);
+		assertSnapsNoWorseThan(WorldPointUtil.packWorldPoint(2965, 3380, 0),
+			WorldPointUtil.packWorldPoint(2955, 3374, 0), WorldPointUtil.packWorldPoint(2956, 3374, 0));
+	}
+
+	@Test
+	public void treeDoesNotSnapIntoFencedPocket()
+	{
+		// Seers' Village 2x2 tree (2734, 3479): the tile north of it is a small
+		// fenced pocket, the most enclosed candidate, and unreachable.
+		setup(2);
+		assertSnapsNoWorseThan(WorldPointUtil.packWorldPoint(2725, 3485, 0),
+			WorldPointUtil.packWorldPoint(2735, 3480, 0), WorldPointUtil.packWorldPoint(2736, 3480, 0));
+	}
+
+	@Test
+	public void wallTargetSnapsToNearSide()
+	{
+		// Diagonal wall south-east of Lumbridge castle: the enclosed far side
+		// wins, so the route walks round through two doors instead of stopping
+		// on the open tile north of the wall.
+		setup(2);
+		assertSnapsNoWorseThan(WorldPointUtil.packWorldPoint(3222, 3218, 0),
+			WorldPointUtil.packWorldPoint(3224, 3206, 0), WorldPointUtil.packWorldPoint(3224, 3207, 0));
+	}
+
+	@Test
+	public void disconnectedTargetShortCircuitsSearch()
+	{
+		// Open sea off Draynor is walkable in the collision map but no route
+		// reaches it, nor any tile within the unreachable distance: the search
+		// must give up without exploring the map.
+		setup(2);
+		CollisionMap map = pathfinderConfig.getMap();
+		int start = WorldPointUtil.packWorldPoint(3093, 3245, 0);
+		int target = WorldPointUtil.packWorldPoint(3074, 3221, 0);
+		assertFalse("test requires a walkable target tile", map.isBlocked(3074, 3221, 0));
+
+		PathfinderResult result = search(start, Set.of(target)).getResult();
+		assertNotNull(result);
+		assertFalse(result.isReached());
+		assertEquals(PathTerminationReason.SEARCH_EXHAUSTED, result.getTerminationReason());
+		assertEquals("an unreachable target must not explore any tile", 0, result.getNodesChecked());
+	}
 }

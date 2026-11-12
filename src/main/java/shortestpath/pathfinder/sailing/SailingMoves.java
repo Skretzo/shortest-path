@@ -3,8 +3,7 @@ package shortestpath.pathfinder.sailing;
 import java.util.Arrays;
 
 import net.runelite.api.Perspective;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.*;
 import lombok.experimental.Accessors;
 
 /**

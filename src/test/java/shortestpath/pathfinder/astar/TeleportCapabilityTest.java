@@ -1,7 +1,6 @@
 package shortestpath.pathfinder.astar;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
@@ -60,49 +59,6 @@ public class TeleportCapabilityTest
 		for (int i = 0; i < order.length; i++)
 			for (int j = 0; j < order.length; j++)
 				assertEquals(order[i] + " allows " + order[j], i >= j, order[i].allows(order[j]));
-	}
-
-	@Test
-	public void teleportAreasAreWhereTheCapabilityAllowsCasting()
-	{
-		for (TeleportCapability capability : TeleportCapability.values())
-		{
-			WalkGoal area = WalkGoal.teleportArea(capability);
-			for (int x = 2900; x < 3500; x += 7)
-				for (int y = 3500; y < 4250; y += 3)
-				{
-					assertEquals(capability + " " + x + "," + y, TeleportCapability.at(x, y).allows(capability),
-						area.contains(x, y));
-					assertEquals(area.contains(x, y), WalkGoal.ticks(area.lowerBound(x, y)) == 0);
-				}
-		}
-		WalkGoal over20 = WalkGoal.teleportArea(TeleportCapability.OVER_20);
-		WalkGoal over0 = WalkGoal.teleportArea(TeleportCapability.OVER_0);
-		WalkGoal all = WalkGoal.teleportArea(TeleportCapability.ALL);
-		// Straight south out of level 30 wilderness; out of level 20 wilderness, west is nearer.
-		assertEquals(41, WalkGoal.ticks(over20.lowerBound(3000, 3800)));
-		assertEquals(3000 - 2943, WalkGoal.ticks(over0.lowerBound(3000, 3800)));
-		assertEquals(3700 - 3679, WalkGoal.ticks(over0.lowerBound(3100, 3700)));
-		// The level-30 area runs further north than the level-20 one.
-		assertEquals(4208 - 4150, WalkGoal.ticks(over0.lowerBound(3200, 4150)));
-		// From the level-13 obelisk landing, Ferox Enclave is five tiles north.
-		assertEquals(5, WalkGoal.ticks(all.lowerBound(3156, 3620)));
-	}
-
-	@Test
-	public void teleportAreaBoundNeverOverestimatesAroundFeroxEnclave()
-	{
-		WalkGoal all = WalkGoal.teleportArea(TeleportCapability.ALL);
-		for (int x = 3100; x < 3180; x += 3)
-			for (int y = 3590; y < 3670; y += 3)
-			{
-				int nearest = Integer.MAX_VALUE;
-				for (int gx = x - 100; gx <= x + 100; gx++)
-					for (int gy = y - 100; gy <= y + 100; gy++)
-						if (all.contains(gx, gy))
-							nearest = Math.min(nearest, Math.max(Math.abs(gx - x), Math.abs(gy - y)));
-				assertTrue(x + "," + y, WalkGoal.ticks(all.lowerBound(x, y)) <= nearest);
-			}
 	}
 
 	private static TeleportCapability at(int x, int y)

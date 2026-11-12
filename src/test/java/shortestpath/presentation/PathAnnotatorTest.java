@@ -26,6 +26,7 @@ import shortestpath.pathfinder.CollisionMap;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderConfig;
 import shortestpath.poh.PohService;
+import shortestpath.poh.PohTestServices;
 import shortestpath.presentation.BankPickupRequirements.BankPickupResult;
 import shortestpath.requirement.TransportEligibility;
 import shortestpath.transport.Transport;
@@ -41,8 +42,8 @@ public class PathAnnotatorTest
 	@Before
 	public void setUp()
 	{
-		pohService = PohService.forTesting();
-		annotator = PathAnnotator.forTesting(pohService, null);
+		pohService = PohTestServices.forTesting();
+		annotator = PathAnnotatorTestServices.forTesting(pohService, null);
 	}
 
 	private static Transport transport(TransportType type, String displayInfo, String objectInfo, int destination)
@@ -257,7 +258,7 @@ public class PathAnnotatorTest
 	@Test
 	public void detachedAnnotatorAnswersEveryDisplayReadWithTheEmptyArm()
 	{
-		PathAnnotator detached = PathAnnotator.forTesting();
+		PathAnnotator detached = PathAnnotatorTestServices.forTesting();
 
 		assertNull(detached.getMap());
 		assertNull(detached.getTransports());
@@ -303,7 +304,7 @@ public class PathAnnotatorTest
 	{
 		ItemStateService itemState = mock(ItemStateService.class);
 		PathfinderConfig config = mock(PathfinderConfig.class);
-		PathAnnotator wired = PathAnnotator.forTesting(pohService, itemState);
+		PathAnnotator wired = PathAnnotatorTestServices.forTesting(pohService, itemState);
 		wired.attach(config);
 
 		assertFalse(wired.isBankOpen());

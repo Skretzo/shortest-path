@@ -36,7 +36,10 @@ import org.junit.runner.RunWith;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.Mock;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
 import shortestpath.ItemVariations;
@@ -45,7 +48,9 @@ import shortestpath.PrimitiveIntHashMap;
 import shortestpath.ShortestPathConfig;
 import shortestpath.TestShortestPathConfig;
 import shortestpath.items.ItemStateService;
+import shortestpath.items.ItemStateTestServices;
 import shortestpath.poh.PohService;
+import shortestpath.requirement.ClientPlayerStateSource;
 import shortestpath.settings.TeleportationItem;
 import shortestpath.settings.ConfigChange;
 import shortestpath.settings.Effect;
@@ -73,7 +78,7 @@ public class PathfinderTest
 	ItemContainer bank;
 	private TestShortestPathConfig config = new TestShortestPathConfig();
 	private PathfinderConfig pathfinderConfig;
-	private final ItemStateService itemState = ItemStateService.forTesting();
+	private final ItemStateService itemState = ItemStateTestServices.forTesting();
 
 	@Before
 	public void before()
@@ -663,6 +668,140 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testChasmOfFireDoesNotUsePohRingWithoutStaff()
+	{
+		config.set("useFairyRings", true);
+		config.set("usePoh", true);
+		config.set("usePohFairyRing", true);
+		setupInventory(new Item(ItemID.POH_TABLET_TELEPORTTOHOUSE, 1));
+		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
+		when(client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE)).thenReturn(0);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+
+		Pathfinder route = runScenario(WorldPointUtil.packWorldPoint(1323, 3819, 0),
+			WorldPointUtil.packWorldPoint(1435, 3671, 0));
+		assertTrue(route.getResult().isReached());
+		assertFalse(usedExclusiveTransportType(route, TransportType.FAIRY_RING));
+	}
+
+	@Test
+	public void testKharaziJungleTransportsNeverStrandThePlayer()
+	{
+		setupInventory(
+			new Item(ItemID.MACHETTE, 1),
+			new Item(ItemID.RUNE_AXE, 1));
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		CollisionMap map = pathfinderConfig.getMap();
+		List<Transport> jungle = new ArrayList<>();
+		Set<Integer> origins = new HashSet<>();
+		for (Transport t : activeTransportList())
+		{
+			int x = WorldPointUtil.unpackWorldX(t.getOrigin());
+			int y = WorldPointUtil.unpackWorldY(t.getOrigin());
+			boolean chop = t.getObjectInfo() != null && t.getObjectInfo().startsWith("Chop-down Jungle");
+			boolean stepOff = (t.getObjectInfo() == null || t.getObjectInfo().isEmpty())
+				&& x >= 2755 && x <= 2945 && y >= 2930 && y <= 2945;
+			if (chop || stepOff)
+			{
+				jungle.add(t);
+				origins.add(t.getOrigin());
+			}
+		}
+		assertEquals(63, jungle.size());
+		// Only the jungle is chopped: a tropical tree (2817 2936) under a jungle tree's canopy is not crossed
+		int tropicalTree = WorldPointUtil.packWorldPoint(2817, 2936, 0);
+		assertFalse(jungle.stream().anyMatch(t -> t.getOrigin() == WorldPointUtil.packWorldPoint(2817, 2935, 0)
+			|| t.getOrigin() == tropicalTree || t.getDestination() == tropicalTree));
+		for (Transport t : jungle)
+		{
+			int d = t.getDestination();
+			boolean walkable = !map.isBlocked(WorldPointUtil.unpackWorldX(d), WorldPointUtil.unpackWorldY(d), 0);
+			assertTrue("Kharazi jungle transport strands the player at " + WorldPointUtil.unpackWorldPoint(d),
+				walkable || origins.contains(d));
+		}
+		// A* lets a route walk onto a blocked transport origin from an open neighbour. So a chop may
+		// not start on a blocked tile beside open ground (the route would skip the chop in), and a
+		// step-off may only start beside the one open tile it steps onto (else it cuts a corner)
+		for (Transport t : jungle)
+		{
+			int x = WorldPointUtil.unpackWorldX(t.getOrigin());
+			int y = WorldPointUtil.unpackWorldY(t.getOrigin());
+			if (!map.isBlocked(x, y, 0)) continue;
+			boolean chop = t.getObjectInfo() != null && !t.getObjectInfo().isEmpty();
+			for (int[] o : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}})
+			{
+				int next = WorldPointUtil.packWorldPoint(x + o[0], y + o[1], 0);
+				assertFalse("Kharazi jungle transport at " + WorldPointUtil.unpackWorldPoint(t.getOrigin())
+						+ " can be walked onto from " + WorldPointUtil.unpackWorldPoint(next),
+					!map.isBlocked(x + o[0], y + o[1], 0) && (chop || next != t.getDestination()));
+			}
+		}
+
+		// North-to-south and back through each patch of jungle trees and bushes
+		int[][] crossings = {
+			{2762, 2944, 2762, 2933},
+			{2795, 2944, 2795, 2934},
+			{2816, 2942, 2816, 2934},
+			{2866, 2942, 2866, 2933},
+			{2865, 2938, 2866, 2942},
+			{2823, 2942, 2818, 2930},
+			{2932, 2944, 2932, 2935},
+		};
+		for (int[] c : crossings)
+		{
+			int north = WorldPointUtil.packWorldPoint(c[0], c[1], 0);
+			int south = WorldPointUtil.packWorldPoint(c[2], c[3], 0);
+			for (int[] route : new int[][]{{north, south}, {south, north}})
+			{
+				AStarPathfinder search = new AStarPathfinder(pathfinderConfig, TestWorldData.routingStatic(),
+					null, route[0], Set.of(route[1]), null, 1);
+				search.run();
+				assertTrue(WorldPointUtil.unpackWorldPoint(route[0]) + " -> " + WorldPointUtil.unpackWorldPoint(route[1]),
+					search.getResult().isReached());
+				// and never walks onto a blocked jungle tile instead of chopping
+				List<PathStep> path = search.getPath();
+				for (int i = 1; i < path.size(); i++)
+				{
+					int p = path.get(i).getPackedPosition();
+					assertFalse("walked onto " + WorldPointUtil.unpackWorldPoint(p),
+						path.get(i).getTransport() == null && map.isBlocked(WorldPointUtil.unpackWorldX(p), WorldPointUtil.unpackWorldY(p), 0));
+				}
+			}
+		}
+	}
+
+	@Test
+	public void testKingAwowogeiEntranceRequiresMonkeyMadnessII()
+	{
+		int outside = WorldPointUtil.packWorldPoint(2802, 2756, 0);
+		int entrance = WorldPointUtil.packWorldPoint(2802, 2759, 0);
+		int inside = WorldPointUtil.packWorldPoint(2802, 2762, 0);
+		setupInventory();
+		setupConfig(QuestState.IN_PROGRESS, 99, TeleportationItem.NONE);
+		assertTrue(pathfinderConfig.getMap().isBlocked(2799, 2762, 0));
+		assertTrue(pathfinderConfig.getMap().isBlocked(2802, 2759, 0));
+		assertFalse(activeTransportList().stream().anyMatch(t ->
+			t.getOrigin() == outside && t.getDestination() == entrance
+				|| t.getOrigin() == entrance && t.getDestination() == outside));
+		AStarPathfinder locked = new AStarPathfinder(pathfinderConfig, TestWorldData.routingStatic(),
+			null, outside, Set.of(inside), null, 1);
+		locked.run();
+		assertFalse("The guard must not be bypassed before MM2", locked.getResult().isReached());
+
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		assertEquals(2, activeTransportList().stream().filter(t ->
+			t.getOrigin() == outside && t.getDestination() == entrance
+				|| t.getOrigin() == entrance && t.getDestination() == outside).count());
+		for (int[] route : new int[][]{{outside, inside}, {inside, outside}})
+		{
+			AStarPathfinder search = new AStarPathfinder(pathfinderConfig, TestWorldData.routingStatic(),
+				null, route[0], Set.of(route[1]), null, 1);
+			search.run();
+			assertTrue(search.getResult().getTerminationReason().toString(), search.getResult().isReached());
+		}
+	}
+
+	@Test
 	public void testFairyRingsNotUsedWithoutDramenStaff()
 	{
 		config.set("useFairyRings", true);
@@ -1040,7 +1179,7 @@ public class PathfinderTest
 			assertTrue("test requires a blocked target tile",
 				map.isBlocked(2533, ty, 0));
 			assertTrue("test requires the west edge to be a wall boundary",
-				map.wallW(2533, ty, 0));
+				map.wallE(2532, ty, 0));
 			int end = runBlockedTargetRoute(2526, 3087, 2533, ty);
 			assertTrue("path must end on the corridor side of the wall column",
 				WorldPointUtil.unpackWorldX(end) > 2533);
@@ -2311,6 +2450,86 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testMusicCapeRequiresAllNonHolidayTracks()
+	{
+		setupMusicDatabase();
+		setupInventory(new Item(ItemID.MUSIC_CAPE, 1));
+		setupEquipment();
+		// A holiday unlock cannot replace the missing required track.
+		when(client.getIntStack()).thenReturn(new int[]{1});
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+		assertFalse(hasUsableTeleport("Music cape: Falo the Bard"));
+
+		// The required unlock uses bit 31 of the music varplayer.
+		when(client.getIntStack()).thenReturn(new int[]{Integer.MIN_VALUE});
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+		assertTrue(hasUsableTeleport("Music cape: Falo the Bard"));
+
+		when(client.getIntStack()).thenReturn(new int[]{0});
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.ALL);
+		assertFalse(hasUsableTeleport("Music cape: Falo the Bard"));
+
+		verify(client, atLeastOnce()).runScript(ClientPlayerStateSource.GET_MUSIC_VARP, 7);
+	}
+
+	@Test
+	public void testBankedMusicCapeRequiresAllNonHolidayTracks()
+	{
+		setupMusicDatabase();
+		config.set("includeBankPath", true);
+		setupInventory();
+		setupEquipment();
+		when(client.getIntStack()).thenReturn(new int[]{0});
+		setupConfigWithBank(QuestState.FINISHED, TeleportationItem.INVENTORY_AND_BANK,
+			new Item(ItemID.MUSIC_CAPE_TRIMMED, 1));
+		assertFalse(hasUsableTeleport("Music cape: Falo the Bard", BankVisitState.BANKED));
+
+		when(client.getIntStack()).thenReturn(new int[]{Integer.MIN_VALUE});
+		setupConfigWithBank(QuestState.FINISHED, TeleportationItem.INVENTORY_AND_BANK,
+			new Item(ItemID.MUSIC_CAPE_TRIMMED, 1));
+		assertTrue(hasUsableTeleport("Music cape: Falo the Bard", BankVisitState.BANKED));
+
+		verify(client, atLeastOnce()).runScript(ClientPlayerStateSource.GET_MUSIC_VARP, 7);
+	}
+
+	@Test
+	public void testMusicCapeFailsClosedWithoutMusicData()
+	{
+		setupInventory(new Item(ItemID.MUSIC_CAPE, 1));
+		setupEquipment();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+		assertFalse(hasUsableTeleport("Music cape: Falo the Bard"));
+
+		setupMusicDatabase();
+		// Out of range: indexes are one-based
+		when(client.getDBTableField(1, DBTableID.Music.COL_VARIABLE, 0)).thenReturn(new Object[]{0});
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
+		assertFalse(hasUsableTeleport("Music cape: Falo the Bard"));
+
+		verify(client, never()).runScript(ClientPlayerStateSource.GET_MUSIC_VARP, 0);
+	}
+
+	private void setupMusicDatabase()
+	{
+		when(client.getDBTableRows(DBTableID.Music.ID)).thenReturn(Arrays.asList(1, 2, 3, 4, 5));
+		for (int row = 1; row <= 5; row++)
+		{
+			when(client.getDBTableField(row, DBTableID.Music.COL_RELEASE_TYPE, 0))
+				.thenReturn(new Object[]{row == 5 ? 0 : 1});
+			when(client.getDBTableField(row, DBTableID.Music.COL_HIDDEN, 0))
+				.thenReturn(new Object[]{row == 4 ? 1 : 0});
+			when(client.getDBTableField(row, DBTableID.Music.COL_HOLIDAY, 0))
+				.thenReturn(new Object[]{row == 3 ? 1 : -1});
+			when(client.getDBTableField(row, DBTableID.Music.COL_AUTOMATIC_UNLOCK, 0))
+				.thenReturn(new Object[]{row == 2 ? 1 : 0});
+			when(client.getDBTableField(row, DBTableID.Music.COL_VARIABLE, 0))
+				.thenReturn(new Object[]{7});
+			when(client.getDBTableField(row, DBTableID.Music.COL_VARIABLE, 1))
+				.thenReturn(new Object[]{row == 1 ? 31 : 0});
+		}
+	}
+
+	@Test
 	public void testQuestCapeTeleportRequiresCapeAndCompletedQuests()
 	{
 		setupQuestPointDatabase(343);
@@ -2898,9 +3117,9 @@ public class PathfinderTest
 		when(client.getDBTableField(1, DBTableID.Quest.COL_RELEASE_TYPE, 0)).thenReturn(new Object[]{1});
 		when(client.getDBTableField(2, DBTableID.Quest.COL_RELEASE_TYPE, 0)).thenReturn(new Object[]{1});
 		when(client.getDBTableField(3, DBTableID.Quest.COL_RELEASE_TYPE, 0)).thenReturn(new Object[]{0});
-		when(client.getDBTableField(1, DBTableID.Quest.COL_QUESTPOINTS, 0)).thenReturn(new Object[]{300});
-		when(client.getDBTableField(2, DBTableID.Quest.COL_QUESTPOINTS, 0)).thenReturn(new Object[]{43});
-		when(client.getDBTableField(3, DBTableID.Quest.COL_QUESTPOINTS, 0)).thenReturn(new Object[]{4});
+		when(client.getDBTableField(1, DBTableID.Quest.COL_QUESTPOINTS_OVERRIDE, 0)).thenReturn(new Object[]{300});
+		when(client.getDBTableField(2, DBTableID.Quest.COL_QUESTPOINTS_OVERRIDE, 0)).thenReturn(new Object[]{43});
+		when(client.getDBTableField(3, DBTableID.Quest.COL_QUESTPOINTS_OVERRIDE, 0)).thenReturn(new Object[]{4});
 		when(client.getVarpValue(VarPlayerID.QP)).thenReturn(currentQuestPoints);
 	}
 

@@ -11,15 +11,9 @@ public enum TileCounter
 
 	private final String type;
 
-	public static TileCounter fromType(String type)
+	@Override
+	public String toString()
 	{
-		for (TileCounter tileCounter : values())
-		{
-			if (tileCounter.type.equals(type))
-			{
-				return tileCounter;
-			}
-		}
-		return null;
+		return type;
 	}
 }

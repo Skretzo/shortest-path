@@ -1,27 +1,16 @@
 package shortestpath.requirement;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-import net.runelite.api.Quest;
-import net.runelite.api.QuestState;
+import net.runelite.api.*;
 import net.runelite.api.gameval.ItemID;
 
 import shortestpath.WorldPointUtil;
-import shortestpath.leagues.LeagueModeSnapshot;
-import shortestpath.leagues.LeagueRegion;
-import shortestpath.leagues.LeagueRegionChecker;
+import shortestpath.leagues.*;
 import shortestpath.pathfinder.BankVisitState;
 import shortestpath.poh.PohService;
-import shortestpath.requirement.model.DestinationRequirements;
-import shortestpath.requirement.model.ItemRequirement;
-import shortestpath.requirement.model.SkillLevels;
-import shortestpath.requirement.model.TransportItems;
-import shortestpath.requirement.model.Unlock;
-import shortestpath.requirement.model.VarRequirement;
-import shortestpath.transport.Transport;
-import shortestpath.transport.TransportType;
+import shortestpath.requirement.model.*;
+import shortestpath.transport.*;
 
 /**
  * The ordered gate chain deciding which transports can run this refresh.
@@ -283,8 +272,7 @@ public final class Requirements
 		{
 			// The injected fairy-staff requirement is player-restrictable like an
 			// item teleport's own items: a bare blocked id covering every
-			// Dramen/Lunar staff variant disables the ring. POH rings never
-			// carry the injected requirement, so they pass through.
+			// Dramen/Lunar staff variant disables the ring.
 			if (TransportType.FAIRY_RING.equals(type)
 				&& transport.getItemRequirements() != null
 				&& !transport.getItemRequirements().survivesBlockedItems(policy.blockedItemIds()))
@@ -362,16 +350,17 @@ public final class Requirements
 	 */
 	private boolean checkRespawnGate(Transport transport)
 	{
-		if (!transport.hasDisplayInfo("Respawn"))
+		if (!transport.hasDisplayInfo("Respawn") && !transport.hasDisplayInfo("Ring of returning:"))
 		{
 			return true;
 		}
+		// Ring of returning lands on different tiles from the spell and POH portal.
 		int destination = transport.getDestination();
-		if (destination == PRIFDDINAS_RESPAWN)
+		if (destination == PRIFDDINAS_RESPAWN || transport.hasDisplayInfo("Ring of returning: Prifddinas"))
 		{
 			return context.isRespawnPrifddinas();
 		}
-		if (destination == LUMBRIDGE_RESPAWN)
+		if (destination == LUMBRIDGE_RESPAWN || transport.hasDisplayInfo("Ring of returning: Lumbridge"))
 		{
 			return !context.isRespawnPrifddinas();
 		}
@@ -460,7 +449,7 @@ public final class Requirements
 		// player is maxed for the available skills, so skip the total-level check.
 		LeagueModeSnapshot leagueMode = context.getLeagueModeSnapshot();
 		return boostedSkillLevelsAndMore.missingRequirement(requiredLevels,
-			leagueMode.isSeasonal(), context.getCurrentMaxQuestPoints());
+			leagueMode.isSeasonal(), context.getCurrentMaxQuestPoints(), context.getCurrentMaxMusicTracks());
 	}
 
 	private RejectionReason quest(Transport transport)

@@ -79,6 +79,11 @@ public class SkillRequirementParser implements FieldParser<SkillLevels>
 				{
 					skillLevels[i] = level;
 				}
+				i++;
+				if (skillName.toLowerCase().startsWith("music"))
+				{
+					skillLevels[i] = level;
+				}
 			}
 		}
 		catch (NumberFormatException e)

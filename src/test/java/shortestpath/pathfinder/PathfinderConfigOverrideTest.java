@@ -60,7 +60,7 @@ public class PathfinderConfigOverrideTest
 	}
 
 	@Test
-	public void overridePayloadIsIgnoredByRawReads()
+	public void overridesReachEveryRoutingRead()
 	{
 		config.set("calculationCutoff", 5);
 		settings.applyOverrides(Map.of(
@@ -68,7 +68,7 @@ public class PathfinderConfigOverrideTest
 
 		pathfinderConfig.refresh();
 
-		assertEquals(5L * Constants.GAME_TICK_LENGTH, pathfinderConfig.getCalculationCutoffMillis());
+		assertEquals(99L * Constants.GAME_TICK_LENGTH, pathfinderConfig.getCalculationCutoffMillis());
 	}
 
 	@Test

@@ -197,7 +197,7 @@ public class ConfigChangeTest
 
 	/**
 	 * Search-lifecycle keys are read mid-search by the shell and the finder,
-	 * not by the refresh path — changing them republishes the views but must
+	 * not by the refresh path — changing them must
 	 * not restart a running route.
 	 */
 	@Test
@@ -207,7 +207,6 @@ public class ConfigChangeTest
 		assertDisplayOnly("recalculateDistance");
 		assertDisplayOnly("finishDistance");
 		assertDisplayOnly("postTransports");
-		assertDisplayOnly("clearPathHotkey");
 		assertDisplayOnly("builtTeleportationBoxes");
 		assertDisplayOnly("builtTeleportationPortalsPoh");
 	}

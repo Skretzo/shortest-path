@@ -1,12 +1,9 @@
 package shortestpath.api;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import shortestpath.settings.ConfigKey;
+import java.util.*;
 import java.util.function.Consumer;
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import javax.inject.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -15,18 +12,9 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.events.PluginMessage;
 import shortestpath.WorldPointUtil;
-import shortestpath.pathfinder.ActiveSearch;
-import shortestpath.pathfinder.Arrival;
-import shortestpath.pathfinder.BankVisitState;
-import shortestpath.pathfinder.PathStep;
-import shortestpath.pathfinder.PathfinderResult;
-import shortestpath.pathfinder.PathTerminationReason;
-import shortestpath.pathfinder.Target;
-import shortestpath.pathfinder.Targets;
+import shortestpath.pathfinder.*;
 import shortestpath.presentation.PathAnnotator;
-import shortestpath.scheduler.PathScheduler;
-import shortestpath.scheduler.QueryResponder;
-import shortestpath.scheduler.RefreshCoordinator;
+import shortestpath.scheduler.*;
 import shortestpath.settings.Settings;
 import shortestpath.transport.Transport;
 
@@ -293,7 +281,7 @@ public class PluginMessageHandler implements QueryResponder
 			int start = (pathfinder == null) ? WorldPointUtil.UNDEFINED : pathfinder.getStart();
 			Targets targets = (pathfinder == null) ? Targets.NONE : pathfinder.getTargets();
 			Map<String, Object> overrides =
-				settings.rawOverrides().isEmpty() ? null : new HashMap<>(settings.rawOverrides());
+				settings.getOverrides().isEmpty() ? null : new HashMap<>(settings.getOverrides());
 
 			Map<String, Object> message = new HashMap<>();
 			message.put(PLUGIN_MESSAGE_ID, id);
@@ -326,7 +314,7 @@ public class PluginMessageHandler implements QueryResponder
 		{
 			return;
 		}
-		if (settings.effective().postTransports())
+		if (settings.bool(ConfigKey.POST_TRANSPORTS))
 		{
 			Map<String, Object> data = new HashMap<>();
 			List<WorldPoint> transportOrigins = new ArrayList<>();
