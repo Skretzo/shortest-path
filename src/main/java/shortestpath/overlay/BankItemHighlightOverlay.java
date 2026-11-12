@@ -3,6 +3,7 @@ package shortestpath.overlay;
 import shortestpath.settings.ConfigKey;
 import com.google.inject.Inject;
 import java.awt.*;
+import java.util.*;
 import java.util.List;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
@@ -58,6 +59,22 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 		// Bank never indexes path.get(pathIndex + 1) — it only needs the
 		// player to be on the path at all.
 		return pathIndex >= 0;
+	}
+
+	@Override
+	protected int getPlayerPathIndex(List<PathStep> path)
+	{
+		// A route has one bank stop, and the bank opens from tiles around it, so the player
+		// needn't be standing on it
+		Set<Integer> bankLocations = annotator.getDestinations("bank");
+		for (int i = 0; i < path.size(); i++)
+		{
+			if (bankLocations.contains(path.get(i).getPackedPosition()))
+			{
+				return i;
+			}
+		}
+		return -1;
 	}
 
 	@Override
