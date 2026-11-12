@@ -284,6 +284,79 @@ public final class TransportEligibility
 	}
 
 	/**
+	 * This snapshot with {@code items} added to what the player carries, to ask which transports
+	 * the player could take if they brought them along.
+	 */
+	public TransportEligibility withCarried(Map<Integer, Integer> items)
+	{
+		Map<Integer, Integer> carried = new HashMap<>(carriedItems);
+		Map<Integer, Integer> bankPath = new HashMap<>(bankPathItems);
+		items.forEach((id, quantity) ->
+		{
+			carried.merge(id, quantity, Integer::sum);
+			bankPath.merge(id, quantity, Integer::sum);
+		});
+		return new TransportEligibility(carried, bankPath, bankHas, bankPouchId, bankPouchRunes,
+			fairyRingStaffRequired, teleportationItemSetting, currencyThreshold, unlocks, heldItems.isBankSeen(),
+			balloonLogBasketDestinations);
+	}
+
+	/**
+	 * The item sets that would each let the player meet the transport's item requirements if they
+	 * carried them as well: one per combination of the OR alternatives of the requirements the
+	 * carried pool misses, each naming an owned variation when there is one. Empty when the
+	 * missing requirements aren't items the player can carry, such as a declared unlock.
+	 */
+	public List<Map<Integer, Integer>> missingItems(Transport transport)
+	{
+		TransportItems transportItems = transport.getItemRequirements();
+		if (transportItems == null)
+		{
+			return List.of();
+		}
+		List<Map<Integer, Integer>> sets = List.of(Map.of());
+		for (ItemRequirement requirement : transportItems.getRequirements())
+		{
+			if (new TransportItems(List.of(requirement)).isSatisfiedBy(carriedItems, TransportItems.CURRENCIES,
+				currencyThreshold, unlocksFor(transport)))
+			{
+				continue;
+			}
+			List<Map<Integer, Integer>> next = new ArrayList<>();
+			for (ItemRequirement.Branch branch : requirement.getBranches())
+			{
+				// ponytail: staves and offhands standing in for runes aren't offered; add them as
+				// alternatives if rune suggestions turn out too narrow.
+				int[] ids = branch.getItemIds();
+				if (ids == null || ids.length == 0)
+				{
+					continue;
+				}
+				int id = ids[0];
+				for (int variation : ids)
+				{
+					if (heldItems.carriedAndBanked().getOrDefault(variation, 0) >= pickupQuantity(branch))
+					{
+						id = variation;
+						break;
+					}
+				}
+				for (Map<Integer, Integer> set : sets)
+				{
+					Map<Integer, Integer> grown = new HashMap<>(set);
+					grown.merge(id, pickupQuantity(branch), Integer::sum);
+					next.add(grown);
+				}
+			}
+			// ponytail: a cap instead of a search over every combination of alternatives.
+			sets = next.subList(0, Math.min(next.size(), MAX_ITEM_ALTERNATIVES));
+		}
+		return sets.size() == 1 && sets.get(0).isEmpty() ? List.of() : sets;
+	}
+
+	private static final int MAX_ITEM_ALTERNATIVES = 4;
+
+	/**
 	 * Whether the carried pool alone meets the transport's item requirements, ignoring
 	 * the currency threshold — the player already owns the items, so nothing is spent.
 	 */

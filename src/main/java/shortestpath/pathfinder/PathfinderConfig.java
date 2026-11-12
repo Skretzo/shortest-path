@@ -1,6 +1,7 @@
 package shortestpath.pathfinder;
 
 import java.util.*;
+import java.util.function.Function;
 
 import lombok.Getter;
 import net.runelite.api.*;
@@ -775,9 +776,16 @@ public class PathfinderConfig
 		varbitValues = context.getVarbitValues();
 		varPlayerValues = context.getVarPlayerValues();
 		requirements = new Requirements(context, policy, requirementHooks);
-		TransportAvailability.Builder withoutBank = new TransportAvailability.Builder(allTransports.length);
-		TransportAvailability.Builder withBank = new TransportAvailability.Builder(allTransports.length);
-		for (Transport transport : allTransports)
+		transportAvailabilities = availabilities(allTransports, requirements);
+	}
+
+	/** The transports usable under {@code requirements} without and with a bank visit. */
+	private static TransportAvailabilities availabilities(Transport[] transports, Requirements requirements)
+	{
+		TransportEligibility eligibility = requirements.eligibility();
+		TransportAvailability.Builder withoutBank = new TransportAvailability.Builder(transports.length);
+		TransportAvailability.Builder withBank = new TransportAvailability.Builder(transports.length);
+		for (Transport transport : transports)
 		{
 			// Fairy rings carry the staff rule as an injected item requirement
 			// when the Lumbridge Elite diary is incomplete — the same wrapped
@@ -812,7 +820,61 @@ public class PathfinderConfig
 
 		withoutBank.remapPohTransports();
 		withBank.remapPohTransports();
-		transportAvailabilities = new TransportAvailabilities(withoutBank.build(), withBank.build());
+		return new TransportAvailabilities(withoutBank.build(), withBank.build());
+	}
+
+	/**
+	 * Every capability that would open some transport this refresh locks: the most a search of
+	 * this refresh could suggest. For checking the suggestions; {@code null} before the first refresh.
+	 */
+	public Set<Capability> everyCapability()
+	{
+		Requirements current = requirements;
+		if (current == null)
+		{
+			return null;
+		}
+		Set<Capability> capabilities = new LinkedHashSet<>();
+		for (Transport transport : allTransports)
+		{
+			capabilities.addAll(current.capabilities(transport));
+		}
+		return capabilities;
+	}
+
+	/**
+	 * What a search of this refresh that can't reach its target may suggest unlocking. It captures
+	 * this refresh's requirements, so it may run on the pathfinding thread; {@code null} before the
+	 * first refresh. {@code targetsNeedBank} as for {@link #prepareAStarRoutingAccount(boolean, boolean)}.
+	 */
+	public UnlockSuggestions unlockSuggestions(boolean targetsNeedBank)
+	{
+		Requirements current = requirements;
+		if (current == null)
+		{
+			return null;
+		}
+		Transport[] transports = allTransports;
+		boolean bankPath = includeBankPath || targetsNeedBank;
+		Set<Integer> banks = accessibleBankTiles;
+		int visitCost = bankVisitCost;
+		Function<TransportAvailabilities, PreparedRoutingAccount> compile = availabilities -> PreparedRoutingAccount.compile(
+			availabilities.withoutBank, availabilities.withBank, bankPath, banks, visitCost, true,
+			this::getAdditionalTransportCost);
+		return new UnlockSuggestions(current, granted -> compile.apply(availabilities(transports, granted)), () ->
+		{
+			TransportAvailability.Builder obtainable = new TransportAvailability.Builder(transports.length);
+			for (Transport transport : transports)
+			{
+				if (current.obtainable(transport))
+				{
+					obtainable.add(transport);
+				}
+			}
+			obtainable.remapPohTransports();
+			TransportAvailability built = obtainable.build();
+			return compile.apply(new TransportAvailabilities(built, built));
+		});
 	}
 
 	public boolean avoidWilderness(int packedPosition, int packedNeighborPosition, boolean targetInWilderness)
