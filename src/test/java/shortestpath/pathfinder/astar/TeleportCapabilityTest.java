@@ -1,11 +1,18 @@
 package shortestpath.pathfinder.astar;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
+import java.util.Set;
 import org.junit.Test;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.AbstractNodeKind;
+import shortestpath.pathfinder.TestWorldData;
 import shortestpath.pathfinder.WildernessChecker;
+import shortestpath.poh.PohService;
+import shortestpath.transport.Transport;
+import shortestpath.transport.TransportType;
 
 public class TeleportCapabilityTest
 {
@@ -48,13 +55,37 @@ public class TeleportCapabilityTest
 		assertEquals("level 31", TeleportCapability.OVER_30, at(3200, 3760));
 		assertEquals("Ferox Enclave is not wilderness", TeleportCapability.ALL, at(3130, 3630));
 		assertEquals("underground level 1-20", TeleportCapability.OVER_0, at(3000, 10000));
+		assertEquals("the house landing", TeleportCapability.POH, at(PohService.POH_LANDING_X, PohService.POH_LANDING_Y));
+		assertEquals("Daddy's Home, west of the house", TeleportCapability.ALL, at(1855, 7051));
+	}
+
+	@Test
+	public void houseCastsEverythingButMinigameTeleports()
+	{
+		Transport minigame = new Transport.TransportBuilder().type(TransportType.TELEPORTATION_MINIGAME).maxWildernessLevel(0)
+			.build();
+		Transport spell = new Transport.TransportBuilder().type(TransportType.TELEPORTATION_SPELL).maxWildernessLevel(0)
+			.build();
+		assertFalse(TeleportCapability.POH.canCast(minigame));
+		assertTrue(TeleportCapability.POH.canCast(spell));
+		assertTrue(TeleportCapability.ALL.canCast(minigame));
+	}
+
+	@Test
+	public void noMinigameTeleportIsUsableInTheWilderness()
+	{
+		// So OVER_0, which casts level-20 teleports, casts nothing the house can't.
+		for (Set<Transport> transports : TestWorldData.transports().values())
+			for (Transport transport : transports)
+				if (transport.getType() == TransportType.TELEPORTATION_MINIGAME)
+					assertFalse(transport.getDisplayInfo(), TeleportCapability.OVER_0.canCast(transport));
 	}
 
 	@Test
 	public void eachCapabilityCastsWhatTheOneBeforeItCan()
 	{
 		TeleportCapability[] order = {TeleportCapability.OVER_30, TeleportCapability.OVER_20,
-			TeleportCapability.OVER_0, TeleportCapability.ALL};
+			TeleportCapability.OVER_0, TeleportCapability.POH, TeleportCapability.ALL};
 		assertEquals(order.length, TeleportCapability.values().length);
 		for (int i = 0; i < order.length; i++)
 			for (int j = 0; j < order.length; j++)

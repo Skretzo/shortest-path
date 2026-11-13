@@ -1,24 +1,28 @@
 package shortestpath.pathfinder.astar;
 
 import shortestpath.WorldPointUtil;
-import shortestpath.transport.Transport;
+import shortestpath.poh.PohService;
+import shortestpath.transport.*;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
 /**
  * Which global teleports the A* backend lets the player cast from a tile, by the tile's
- * wilderness band. These are legacy's global-teleport abstract nodes ({@code AbstractNodeKind}):
+ * wilderness band. These are legacy's global-teleport abstract nodes ({@code AbstractNodeKind}),
+ * plus the player-owned house:
  *
  * <pre>
  * OVER_30  level 31+     cast level 31  GLOBAL_TELEPORTS_OVER_30
  * OVER_20  levels 21-30  cast level 30  GLOBAL_TELEPORTS_OVER_20
  * OVER_0   levels 1-20   cast level 20  GLOBAL_TELEPORTS_OVER_0
+ * POH      in the house  cast level 0, no minigame teleports
  * ALL      level 0       cast level 0   GLOBAL_TELEPORTS_NORMAL
  * </pre>
  *
  * A global is castable with a capability when {@link Transport#isUsableAtWildernessLevel} allows
- * the capability's cast level, as in legacy. Cast levels only fall from {@code OVER_30} to
- * {@code ALL}, so each capability can cast everything the one before it can.
+ * the capability's cast level, as in legacy. Grouping (minigame) teleports cannot be cast from
+ * inside the house (https://oldschool.runescape.wiki/w/Grouping), and none is usable in the
+ * wilderness, so each capability can still cast everything the one before it can.
  *
  * <p>The bands are {@code WildernessChecker}'s level-30, level-20 and wilderness areas (checked by
  * {@code TeleportCapabilityTest}), on every plane, inlined here because the forward search asks
@@ -26,7 +30,7 @@ import lombok.experimental.Accessors;
  */
 public enum TeleportCapability
 {
-	OVER_30(31), OVER_20(30), OVER_0(20), ALL(0);
+	OVER_30(31), OVER_20(30), OVER_0(20), POH(0), ALL(0);
 
 	@Getter @Accessors(fluent = true) private final int castLevel;
 
@@ -38,13 +42,14 @@ public enum TeleportCapability
 	/** Whether {@code transport} can be cast as a global teleport in this band. */
 	public boolean canCast(Transport transport)
 	{
-		return transport.isUsableAtWildernessLevel(castLevel);
+		return transport.isUsableAtWildernessLevel(castLevel)
+			&& !(this == POH && transport.getType() == TransportType.TELEPORTATION_MINIGAME);
 	}
 
 	/** Whether a tile with this capability may cast everything {@code required} can. */
 	boolean allows(TeleportCapability required)
 	{
-		return castLevel <= required.castLevel;
+		return ordinal() >= required.ordinal();
 	}
 
 	/**
@@ -63,7 +68,7 @@ public enum TeleportCapability
 	static TeleportCapability at(int x, int y)
 	{
 		// The wilderness areas and the level 30 and level 20 bands, unrolled; NOT_WILDERNESS cuts out of the first.
-		if (x < 2944 || x >= 3462 || y < 3525) return ALL;
+		if (x < 2944 || x >= 3462 || y < 3525) return PohService.isInsidePoh(x, y) ? POH : ALL;
 		if (y >= 9918)
 		{
 			if (y >= 10376) return ALL;
