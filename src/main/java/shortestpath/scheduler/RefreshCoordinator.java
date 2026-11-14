@@ -155,7 +155,7 @@ public class RefreshCoordinator
 	 * The house the route uses changed because the player arrived in or
 	 * left another player's house: the running search restarts from where
 	 * the player stands now, not its old start, which may be inside the
-	 * house just left.
+	 * house just left. A start the player set themselves is kept.
 	 */
 	public void houseChanged(ConfigChange change, int playerLocation)
 	{
@@ -164,7 +164,8 @@ public class RefreshCoordinator
 		{
 			return;
 		}
-		int start = playerLocation == WorldPointUtil.UNDEFINED ? pathfinder.getStart() : playerLocation;
+		int start = scheduler.isStartPointSet() || playerLocation == WorldPointUtil.UNDEFINED
+			? pathfinder.getStart() : playerLocation;
 		scheduler.restart("house: " + change.getKey(), start, pathfinder.getTargets());
 	}
 

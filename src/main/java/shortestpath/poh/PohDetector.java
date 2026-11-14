@@ -106,6 +106,7 @@ public class PohDetector
 		Map<ConfigKey, Object> values = Map.of();
 		// Only a house known to be someone else's: one entered some unknown way may be the
 		// player's own, whose stored settings (and saved nexus list) are then the better guess.
+		// The layer is kept whatever Use POH says, so turning it on routes with this house at once.
 		if (tracker.isInOthersHouse() && lastScan != null && settings.bool(ConfigKey.DETECT_POH_SETTINGS))
 		{
 			values = visitValues(lastScan, visitNexus);
@@ -114,7 +115,8 @@ public class PohDetector
 		pohService.setChamberPortals(tracker.isInHouse() && lastScan != null && (tracker.isInOwnHouse() || !values.isEmpty())
 			? lastScan.chamberPortals() : ownChamber());
 		ConfigChange change = settings.visitHouse(values);
-		if (change != null)
+		// With Use POH off no house teleport is used, so the route stays as it is.
+		if (change != null && settings.bool(ConfigKey.USE_POH))
 		{
 			log.debug("routing with {}", values.isEmpty() ? "your own house" : "the house you are in");
 			Player player = client.getLocalPlayer();
@@ -404,7 +406,13 @@ public class PohDetector
 		}
 		return new HouseDebug(tracker.isInOwnHouse(), tracker.reason(), state, lastScan, lastObjectCount,
 			lastFeatures, openNexusGroup != -1 ? sorted(nexusRead) : visitNexus,
-			tracker.isInOwnHouse() ? nexusSeen : null, settings.isVisitingHouse(), isVisitedNexusUnread());
+			tracker.isInOwnHouse() ? nexusSeen : null, isRoutingWithVisitedHouse(), isVisitedNexusUnread());
+	}
+
+	/** Whether routing uses another player's house: its layer is set and house teleports are on. */
+	private boolean isRoutingWithVisitedHouse()
+	{
+		return settings.isVisitingHouse() && settings.bool(ConfigKey.USE_POH);
 	}
 
 	/**
@@ -413,7 +421,7 @@ public class PohDetector
 	 */
 	public boolean isVisitedNexusUnread()
 	{
-		return settings.isVisitingHouse() && lastScan != null && lastScan.nexus() && visitNexus == null;
+		return isRoutingWithVisitedHouse() && lastScan != null && lastScan.nexus() && visitNexus == null;
 	}
 
 	/**

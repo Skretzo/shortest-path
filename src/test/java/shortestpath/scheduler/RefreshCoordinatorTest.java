@@ -175,6 +175,29 @@ public class RefreshCoordinatorTest
 	}
 
 	@Test
+	public void houseChangedRestartsFromWhereThePlayerStands()
+	{
+		runningSearch(11, Targets.at(Set.of(13)));
+		ConfigChange change = settings.visitHouse(java.util.Map.of(shortestpath.settings.ConfigKey.USE_POH_FAIRY_RING, true));
+
+		coordinator.houseChanged(change, 21);
+
+		verify(scheduler).restart("house: " + change.getKey(), 21, Targets.at(Set.of(13)));
+	}
+
+	@Test
+	public void houseChangedKeepsAStartThePlayerSet()
+	{
+		runningSearch(11, Targets.at(Set.of(13)));
+		when(scheduler.isStartPointSet()).thenReturn(true);
+		ConfigChange change = settings.visitHouse(java.util.Map.of(shortestpath.settings.ConfigKey.USE_POH_FAIRY_RING, true));
+
+		coordinator.houseChanged(change, 21);
+
+		verify(scheduler).restart("house: " + change.getKey(), 11, Targets.at(Set.of(13)));
+	}
+
+	@Test
 	public void configChangedRestartsWithoutBackendPrepForPlainRoutingKeys()
 	{
 		runningSearch(11, Targets.at(Set.of(13)));
