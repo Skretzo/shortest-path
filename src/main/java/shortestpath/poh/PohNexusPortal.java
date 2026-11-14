@@ -103,6 +103,12 @@ public enum PohNexusPortal
 		this.displayInfos = List.of(cols[3].split(","));
 	}
 
+	/** The transport display infos this destination covers. */
+	List<String> displayInfos()
+	{
+		return displayInfos;
+	}
+
 	public static PohNexusPortal fromDisplayInfo(String displayInfo)
 	{
 		return BY_DISPLAY_INFO.get(displayInfo);

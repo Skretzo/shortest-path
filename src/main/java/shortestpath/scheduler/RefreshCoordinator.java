@@ -152,6 +152,23 @@ public class RefreshCoordinator
 	}
 
 	/**
+	 * The house the route uses changed because the player arrived in or
+	 * left another player's house: the running search restarts from where
+	 * the player stands now, not its old start, which may be inside the
+	 * house just left.
+	 */
+	public void houseChanged(ConfigChange change, int playerLocation)
+	{
+		ActiveSearch pathfinder = scheduler.getActiveSearch();
+		if (pathfinder == null || !change.getEffects().contains(Effect.ROUTE_INVALIDATING))
+		{
+			return;
+		}
+		int start = playerLocation == WorldPointUtil.UNDEFINED ? pathfinder.getStart() : playerLocation;
+		scheduler.restart("house: " + change.getKey(), start, pathfinder.getTargets());
+	}
+
+	/**
 	 * A config-profile switch: warms the backend again and restarts the
 	 * running search, if any. Returns whether a search was restarted so the
 	 * shell can queue its no-search config refresh fallback itself.

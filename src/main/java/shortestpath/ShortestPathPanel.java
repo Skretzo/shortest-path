@@ -146,6 +146,8 @@ public class ShortestPathPanel extends PluginPanel
 	 * name, never stacked.
 	 */
 	private final JPanel body = new JPanel(new CardLayout());
+	/** The House Debug block's text, under the house card. */
+	private final JTextArea houseDebugText = new JTextArea();
 	private final List<Tile> tiles = new ArrayList<>();
 
 	ShortestPathPanel(Settings settings, Client client,
@@ -337,6 +339,9 @@ public class ShortestPathPanel extends PluginPanel
 		categories.add(poh);
 
 		List<SearchRow> detail = new ArrayList<>();
+		detail.add(checkRow("detectPohSettings"));
+		detail.add(checkRow("detectPohKeepExtra"));
+		detail.add(checkRow("highlightPohObject"));
 		detail.add(checkRow("usePohFairyRing"));
 		detail.add(checkRow("usePohSpiritTree"));
 		detail.add(checkRow("usePohObelisk"));
@@ -351,6 +356,60 @@ public class ShortestPathPanel extends PluginPanel
 
 		addFlatFamilyCard(poh, "usePoh", ItemID.POH_TABLET_TELEPORTTOHOUSE,
 			detail.toArray(new SearchRow[0]));
+		poh.addRow(houseDebugSection(), "House Debug", searchable("house debug", "nexus teleports"));
+	}
+
+	/**
+	 * Under the house card while "Show Debug Panel" is on: everything the
+	 * house detection knows about the house the player stands in, with the
+	 * full nexus and portal lists the on-screen debug panel has no room
+	 * for. The section's own scroll carries it.
+	 */
+	private JComponent houseDebugSection()
+	{
+		JLabel title = new JLabel("House Debug");
+		title.setForeground(ColorScheme.BRAND_ORANGE);
+		title.setFont(FontManager.getRunescapeBoldFont());
+
+		houseDebugText.setEditable(false);
+		houseDebugText.setFocusable(false);
+		// A text change moves the caret to the end, and the caret would scroll the section to it.
+		((javax.swing.text.DefaultCaret) houseDebugText.getCaret())
+			.setUpdatePolicy(javax.swing.text.DefaultCaret.NEVER_UPDATE);
+		houseDebugText.setLineWrap(true);
+		houseDebugText.setWrapStyleWord(true);
+		houseDebugText.setFont(FontManager.getRunescapeSmallFont());
+		houseDebugText.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		houseDebugText.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		houseDebugText.setBorder(new EmptyBorder(4, 6, 4, 6));
+		houseDebugText.setText(HouseDebug.text(null));
+
+		JPanel section = new JPanel(new BorderLayout(0, 4));
+		section.setOpaque(false);
+		section.add(title, BorderLayout.NORTH);
+		section.add(houseDebugText, BorderLayout.CENTER);
+
+		JPanel holder = new JPanel(new BorderLayout());
+		holder.setOpaque(false);
+		holder.add(section, BorderLayout.CENTER);
+		Runnable sync = () -> section.setVisible(Boolean.TRUE.equals(settings.configured("drawDebugPanel")));
+		sync.run();
+		registerConfigListener("drawDebugPanel", () ->
+		{
+			sync.run();
+			holder.revalidate();
+		});
+		return holder;
+	}
+
+	/** Shows the house detection's latest report; on the Swing thread. */
+	void setHouseDebug(String text)
+	{
+		if (!text.equals(houseDebugText.getText()))
+		{
+			houseDebugText.setText(text);
+			houseDebugText.revalidate();
+		}
 	}
 
 	// ---- Navigation ---------------------------------------------------------

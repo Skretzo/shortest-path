@@ -54,6 +54,9 @@ POH_JEWELLERY_BOX_TIER	pohJewelleryBoxTier	JewelleryBoxTier		ORNATE	ROUTE_INVALI
 POH_MOUNTED_ITEMS	pohMountedItems	Set	PohMountedItem	flag:usePohMountedItems	ROUTE_INVALIDATING
 USE_POH_MOUNTED_ITEMS	usePohMountedItems	boolean		true	ROUTE_INVALIDATING
 USE_POH_OBELISK	usePohObelisk	boolean		false	ROUTE_INVALIDATING
+DETECT_POH_SETTINGS	detectPohSettings	boolean		true	DISPLAY_ONLY
+DETECT_POH_KEEP_EXTRA	detectPohKeepExtra	boolean		false	DISPLAY_ONLY
+HIGHLIGHT_POH_OBJECT	highlightPohObject	boolean		true	DISPLAY_ONLY
 COST_AGILITY_SHORTCUTS	costAgilityShortcuts	int		0	ROUTE_INVALIDATING
 COST_GRAPPLE_SHORTCUTS	costGrappleShortcuts	int		0	ROUTE_INVALIDATING
 COST_BOATS	costBoats	int		0	ROUTE_INVALIDATING
@@ -97,6 +100,7 @@ COLOUR_BANK_PICKUP_HIGHLIGHT	colourBankPickupHighlight	Color		#00ffff	DISPLAY_ON
 DRAW_TRANSPORTS	drawTransports	boolean		false	DISPLAY_ONLY
 DRAW_COLLISION_MAP	drawCollisionMap	boolean		false	DISPLAY_ONLY
 DRAW_DEBUG_PANEL	drawDebugPanel	boolean		false	SIDE_EFFECT_DEBUG_OVERLAY
+DRAW_POH_OBJECTS	drawPohObjects	boolean		false	DISPLAY_ONLY
 POST_TRANSPORTS	postTransports	boolean		false	DISPLAY_ONLY
 UNREACHABLE_TEXT	unreachableText	String		Destination could not be reached	DISPLAY_ONLY
 BUILT_TELEPORTATION_BOXES	builtTeleportationBoxes	String			DISPLAY_ONLY

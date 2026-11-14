@@ -55,6 +55,9 @@ public class PohServiceTest
 	{
 		assertTrue(PohService.isInsidePoh(1856, 7040));
 		assertTrue(PohService.isInsidePoh(2047, 7111));
+		// The newest house themes are built in regions 8302 and 8303.
+		assertTrue(PohService.isInsidePoh(2070, 7060));
+		assertTrue(PohService.isInsidePoh(2111, 7111));
 		assertTrue(PohService.isInsidePoh(1858, 7051));
 	}
 
@@ -63,7 +66,7 @@ public class PohServiceTest
 	{
 		// 1855 is excluded so the Daddy's Home miniquest area stays outside.
 		assertFalse(PohService.isInsidePoh(1855, 7040));
-		assertFalse(PohService.isInsidePoh(2048, 7051));
+		assertFalse(PohService.isInsidePoh(2112, 7051));
 		assertFalse(PohService.isInsidePoh(1858, 7039));
 		assertFalse(PohService.isInsidePoh(1858, 7112));
 	}

@@ -22,6 +22,8 @@ public final class PluginOverlays
 	private final InventoryHighlightOverlay inventoryHighlightOverlay;
 	private final ScrollBookHighlightOverlay scrollBookHighlightOverlay;
 	private final DebugOverlayPanel debugOverlayPanel;
+	private final HouseObjectOverlay houseObjectOverlay;
+	private final HouseMenuHighlightOverlay houseMenuHighlightOverlay;
 
 	public PluginOverlays(
 		PathTileOverlay pathOverlay,
@@ -32,8 +34,12 @@ public final class PluginOverlays
 		SpellbookHighlightOverlay spellbookHighlightOverlay,
 		InventoryHighlightOverlay inventoryHighlightOverlay,
 		ScrollBookHighlightOverlay scrollBookHighlightOverlay,
-		DebugOverlayPanel debugOverlayPanel)
+		DebugOverlayPanel debugOverlayPanel,
+		HouseObjectOverlay houseObjectOverlay,
+		HouseMenuHighlightOverlay houseMenuHighlightOverlay)
 	{
+		this.houseMenuHighlightOverlay = houseMenuHighlightOverlay;
+		this.houseObjectOverlay = houseObjectOverlay;
 		this.pathOverlay = pathOverlay;
 		this.pathMinimapOverlay = pathMinimapOverlay;
 		this.pathMapOverlay = pathMapOverlay;
@@ -60,6 +66,8 @@ public final class PluginOverlays
 		overlayManager.add(spellbookHighlightOverlay);
 		overlayManager.add(inventoryHighlightOverlay);
 		overlayManager.add(scrollBookHighlightOverlay);
+		overlayManager.add(houseObjectOverlay);
+		overlayManager.add(houseMenuHighlightOverlay);
 		if (drawDebug)
 		{
 			overlayManager.add(debugOverlayPanel);
@@ -81,6 +89,8 @@ public final class PluginOverlays
 		overlayManager.remove(spellbookHighlightOverlay);
 		overlayManager.remove(inventoryHighlightOverlay);
 		overlayManager.remove(scrollBookHighlightOverlay);
+		overlayManager.remove(houseObjectOverlay);
+		overlayManager.remove(houseMenuHighlightOverlay);
 		overlayManager.remove(debugOverlayPanel);
 	}
 

@@ -1672,8 +1672,8 @@ public class ShortestPathPanelLayoutTest
 	public void pohCategoryShowsCollapsibleGroupsNotFlatRows()
 	{
 		newPanel();
-		assertEquals("the POH section is a single family-card row",
-			1, pohCategory().rows().size());
+		assertEquals("the POH section is the family card plus the House Debug block",
+			2, pohCategory().rows().size());
 		TransportFamilyCard card = pohCard();
 		assertNotNull("the usePoh card", card);
 		assertNotNull("the card carries the usePoh master checkbox",
@@ -1688,9 +1688,9 @@ public class ShortestPathPanelLayoutTest
 			}
 		}
 		assertEquals("five spellbook groups + the mounted-items group", 6, groups);
-		assertEquals("the card detail is compact — 4 rows + 2 captions "
+		assertEquals("the card detail is compact — 7 rows + 2 captions "
 				+ "+ 6 group headers instead of 40+ flat member rows",
-			12, card.detail.getComponentCount());
+			15, card.detail.getComponentCount());
 	}
 
 	/**

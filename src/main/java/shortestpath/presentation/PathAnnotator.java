@@ -59,10 +59,13 @@ public class PathAnnotator
 	 * colon is upstream display text, not a typo.
 	 */
 	static final Map<TransportType, String> EXIT_PREFIX = Map.of(
-		TransportType.TELEPORTATION_PORTAL_POH, "Nexus: ",
+		TransportType.TELEPORTATION_PORTAL_POH, "Open Portal Nexus: ",
 		TransportType.FAIRY_RING, "Fairy Ring ",
 		TransportType.SPIRIT_TREE, "Spirit Tree: ",
 		TransportType.WILDERNESS_OBELISK, "Obelisk: ");
+
+	/** The label for a house portal destination the house has in its portal chamber. */
+	static final String CHAMBER_PREFIX = "Enter Portal: ";
 
 	private final Client client;
 	private final PohService pohService;
@@ -274,6 +277,52 @@ public class PathAnnotator
 	 */
 	public String getPohExitInfo(int destination, List<PathStep> path, int currentIndex)
 	{
+		Transport transport = getPohExitTransport(destination, path, currentIndex);
+		if (transport == null)
+		{
+			return null;
+		}
+		String exitInfo = formatTransportDisplay(transport);
+		if (exitInfo == null || exitInfo.isEmpty())
+		{
+			return null;
+		}
+		TransportType exitType = transport.getType();
+		if (TransportType.TELEPORTATION_BOX.equals(exitType))
+		{
+			String objInfo = transport.getObjectInfo();
+			String label = OBJINFO_FALLBACK_LABEL;
+			if (objInfo != null)
+			{
+				for (List<String> pair : OBJINFO_LABELS)
+				{
+					if (objInfo.contains(pair.get(0)))
+					{
+						label = pair.get(1);
+						break;
+					}
+				}
+			}
+			return label + exitInfo;
+		}
+		String prefix = exitType == null ? null : EXIT_PREFIX.get(exitType);
+		// A destination the house has in its portal chamber is entered there, not through the nexus.
+		if (TransportType.TELEPORTATION_PORTAL_POH.equals(exitType) && pohService != null
+			&& pohService.isChamberPortal(transport.getDisplayInfo()))
+		{
+			// A chamber portal has no hotkey; the one the label carries is the nexus's.
+			return CHAMBER_PREFIX + PohService.stripKeyPrefix(exitInfo);
+		}
+		return prefix == null ? exitInfo : prefix + exitInfo;
+	}
+
+	/**
+	 * The transport the path uses to leave the POH after {@code currentIndex},
+	 * or null when {@code destination} is outside the POH or the path leaves
+	 * it without one. Same look-ahead as {@link #getPohExitInfo}.
+	 */
+	public Transport getPohExitTransport(int destination, List<PathStep> path, int currentIndex)
+	{
 		if (path == null || currentIndex < -1)
 		{
 			return null;
@@ -287,8 +336,6 @@ public class PathAnnotator
 		{
 			return null;
 		}
-
-		String immediateExitInfo = null;
 
 		// Look ahead in the path to find the next transport that exits POH
 		for (int i = currentIndex + 1; i < path.size() - 1; i++)
@@ -307,41 +354,12 @@ public class PathAnnotator
 
 			if (stepInsidePoh && !nextInsidePoh)
 			{
-				// Found the exit transport - get its display info using bank-aware lookup
-				PathStep currentStep = path.get(i);
-				PathStep nextStep = path.get(i + 1);
-				for (Transport transport : transportsForEdge(currentStep, nextStep))
+				// Found the exit transport - the first one on the edge, bank-aware
+				for (Transport transport : transportsForEdge(path.get(i), path.get(i + 1)))
 				{
-					String exitInfo = formatTransportDisplay(transport);
-					if (exitInfo != null && !exitInfo.isEmpty())
-					{
-						TransportType exitType = transport.getType();
-						if (TransportType.TELEPORTATION_BOX.equals(exitType))
-						{
-							String objInfo = transport.getObjectInfo();
-							String label = OBJINFO_FALLBACK_LABEL;
-							if (objInfo != null)
-							{
-								for (List<String> pair : OBJINFO_LABELS)
-								{
-									if (objInfo.contains(pair.get(0)))
-									{
-										label = pair.get(1);
-										break;
-									}
-								}
-							}
-							immediateExitInfo = label + exitInfo;
-						}
-						else
-						{
-							String prefix = exitType == null ? null : EXIT_PREFIX.get(exitType);
-							immediateExitInfo = prefix == null ? exitInfo : prefix + exitInfo;
-						}
-					}
-					break;
+					return transport;
 				}
-				break;
+				return null;
 			}
 
 			// If we've left POH without finding a transport, stop looking
@@ -351,7 +369,7 @@ public class PathAnnotator
 			}
 		}
 
-		return immediateExitInfo;
+		return null;
 	}
 
 	public CollisionMap getMap()
