@@ -2,7 +2,6 @@ package shortestpath.overlay;
 
 import com.google.inject.Inject;
 import java.awt.*;
-import java.util.Collection;
 import java.util.List;
 import net.runelite.api.Client;
 import net.runelite.client.ui.overlay.*;
@@ -115,23 +114,6 @@ public class DebugOverlayPanel extends OverlayPanel
 		return value ? "yes" : "no";
 	}
 
-	private static String list(Collection<?> items)
-	{
-		if (items.isEmpty())
-		{
-			return "none";
-		}
-		StringBuilder sb = new StringBuilder();
-		for (Object item : items)
-		{
-			if (sb.length() > 0)
-			{
-				sb.append(", ");
-			}
-			sb.append(item);
-		}
-		return sb.toString();
-	}
 
 	private void renderSearch(List<LayoutableRenderableEntity> components, DebugState debug)
 	{

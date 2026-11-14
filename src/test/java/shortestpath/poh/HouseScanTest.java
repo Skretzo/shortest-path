@@ -167,6 +167,24 @@ public class HouseScanTest
 	}
 
 	@Test
+	public void everyMountedItemRowLeadsToThatItem() throws Exception
+	{
+		int[] rows = {0};
+		Util.each("/transports/teleportation_boxes.tsv", (line, cols) ->
+		{
+			PohMountedItem item = PohMountedItem.fromObjectInfo(cols[2]);
+			if (item != null)
+			{
+				rows[0]++;
+				assertEquals(line, List.of("mounted:" + item.name()), HouseScan.targetsFor(cols[2]));
+			}
+		});
+		assertTrue(rows[0] > 0);
+		// The Lithkren row's object id is the Xeric's talisman's; the item name decides.
+		assertEquals(List.of("mounted:DIGSITE_PENDANT"), HouseScan.targetsFor("Lithkren Digsite Pendant 33419"));
+	}
+
+	@Test
 	public void portalsBeforeTheirDestinationIsPicked()
 	{
 		HouseScan scan = HouseScan.of(List.of(ObjectID.POH_PORTAL_MARBLE_VARROCK, ObjectID.POH_PORTAL_TEAK_CAMELOT,

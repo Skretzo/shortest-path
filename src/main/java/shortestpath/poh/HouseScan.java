@@ -183,6 +183,21 @@ public final class HouseScan
 		return targets;
 	}
 
+	/**
+	 * The house objects that can take a route row, best first. A mounted item
+	 * is found by its name in the row, the way the pathfinder enables it,
+	 * since the object ids in its rows do not all name the item itself.
+	 */
+	public static List<String> targetsFor(String objectInfo)
+	{
+		PohMountedItem item = PohMountedItem.fromObjectInfo(objectInfo);
+		if (item != null)
+		{
+			return List.of("mounted:" + item.name());
+		}
+		return targetsFor(objectId(objectInfo));
+	}
+
 	/** The hotkey a Portal Nexus menu line starts with ("6 : Barrows" gives "6"), or null. */
 	public static String lineKey(String line)
 	{

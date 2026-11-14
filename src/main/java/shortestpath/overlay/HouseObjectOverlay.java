@@ -77,7 +77,7 @@ public class HouseObjectOverlay extends Overlay
 
 		Transport exit = highlight ? exit() : null;
 		List<HouseObject> next = exit == null ? List.of()
-			: pick(objects, HouseScan.targetsFor(HouseScan.objectId(exit.getObjectInfo())));
+			: pick(objects, HouseScan.targetsFor(exit.getObjectInfo()));
 		// In another player's house whose nexus is not read yet, the route assumes the nexus has the
 		// destination; the player is told to open it and check.
 		String checkFor = checkNexusFor(exit, next, pohDetector.isVisitedNexusUnread());

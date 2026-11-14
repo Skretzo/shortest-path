@@ -132,9 +132,8 @@ public class PohDetector
 	 */
 	static Map<ConfigKey, Object> visitValues(HouseScan scan, Set<PohNexusPortal> nexus)
 	{
+		// The player's own Use POH stays in charge: off, no house teleport is used, this one included.
 		Map<ConfigKey, Object> values = new HashMap<>();
-		// Standing in the house, its teleports are there to use whatever the player's own house setting is.
-		values.put(ConfigKey.USE_POH, true);
 		values.put(ConfigKey.USE_POH_FAIRY_RING, scan.fairyRing());
 		values.put(ConfigKey.USE_POH_SPIRIT_TREE, scan.spiritTree());
 		values.put(ConfigKey.USE_POH_OBELISK, scan.obelisk());
@@ -539,8 +538,7 @@ public class PohDetector
 
 	/**
 	 * A feature is on when the house has it; with {@code keep}, a feature
-	 * already on stays on although the house lacks it (the player uses one
-	 * elsewhere, such as a friend's house).
+	 * already on stays on although the house lacks it.
 	 */
 	static boolean flag(boolean detected, boolean current, boolean keep)
 	{

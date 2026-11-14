@@ -33,7 +33,7 @@ public class OwnHouseTrackerTest
 	public void friendsHousesDoNot()
 	{
 		assertFalse(entersOwnHouseAfter("Friend's house", "<col=ffff>Portal</col>"));
-		assertFalse(entersOwnHouseAfter("Visit-Last", "<col=ffff>Portal</col>"));
+		assertFalse(entersOwnHouseAfter("Visit-Last", "<col=ffff>House Advertisement</col>"));
 		assertFalse(entersOwnHouseAfter("Continue", "Go to a friend's house."));
 		assertFalse(entersOwnHouseAfter("View", "<col=ffff>House Advertisement</col>"));
 		assertFalse(entersOwnHouseAfter("Outside", "<col=ff9040>Teleport to house</col>"));

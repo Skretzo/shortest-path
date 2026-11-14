@@ -39,8 +39,10 @@ public class PohService
 {
 	// POH (Player Owned House) bounds for detecting when path goes through POH
 	// Note: POH_MIN_X is 1856 to exclude the Daddy's Home miniquest area.
-	// POH_MAX_X covers every house theme's rooms: RuneLite counts regions
-	// 7534 to 8303 as the house, and the newest themes are built at x 2048+.
+	// POH_MAX_X covers every house theme's rooms: RuneLite's
+	// DiscordGameEventType.REGION_POH lists regions 7534, 7535, 7790, 7791,
+	// 8046, 8047, 8302 and 8303 (x 1856-2111), and the newest themes are
+	// built at x 2048+.
 	private static final int POH_MIN_X = 1856;
 	private static final int POH_MAX_X = 2111;
 	private static final int POH_MIN_Y = 7040;

@@ -7,8 +7,8 @@ import net.runelite.client.util.Text;
  * Tells the player's own house from a friend's. Both are the same instance,
  * so the way in decides: a house teleport, the house portal's Home or Build
  * mode, or "Go to your house" in its dialog leads to one's own house; the
- * portal's Friend's house and Visit-Last, a house teleport's Group option, or the house advertisement board,
- * lead to someone else's. An entry by any other way stays unknown and is
+ * portal's Friend's house, a house teleport's Group option, or the house
+ * advertisement board (View, Visit-Last) lead to someone else's. An entry by any other way stays unknown and is
  * treated as not one's own, so a friend's house is never read as the
  * player's.
  * <p>
@@ -230,7 +230,6 @@ public final class OwnHouseTracker
 				case "build mode":
 					return Entry.OWN;
 				case "friend's house":
-				case "visit-last":
 				case "enter":
 					return Entry.OTHER;
 				default:

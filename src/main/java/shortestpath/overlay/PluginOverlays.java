@@ -3,7 +3,7 @@ package shortestpath.overlay;
 import net.runelite.client.ui.overlay.OverlayManager;
 
 /**
- * The plugin's overlay set as one composite: the shell keeps the nine
+ * The plugin's overlay set as one composite: the shell keeps the eleven
  * overlay references injected but delegates every lifecycle call here, so
  * the add/remove/debug-toggle idioms each have a single owner. Register
  * order is render order, so the field order below mirrors the order the
@@ -38,8 +38,6 @@ public final class PluginOverlays
 		HouseObjectOverlay houseObjectOverlay,
 		HouseMenuHighlightOverlay houseMenuHighlightOverlay)
 	{
-		this.houseMenuHighlightOverlay = houseMenuHighlightOverlay;
-		this.houseObjectOverlay = houseObjectOverlay;
 		this.pathOverlay = pathOverlay;
 		this.pathMinimapOverlay = pathMinimapOverlay;
 		this.pathMapOverlay = pathMapOverlay;
@@ -49,6 +47,8 @@ public final class PluginOverlays
 		this.inventoryHighlightOverlay = inventoryHighlightOverlay;
 		this.scrollBookHighlightOverlay = scrollBookHighlightOverlay;
 		this.debugOverlayPanel = debugOverlayPanel;
+		this.houseObjectOverlay = houseObjectOverlay;
+		this.houseMenuHighlightOverlay = houseMenuHighlightOverlay;
 	}
 
 	/**
@@ -75,7 +75,7 @@ public final class PluginOverlays
 	}
 
 	/**
-	 * Removes all nine overlays unconditionally, matching the plugin's
+	 * Removes all eleven overlays unconditionally, matching the plugin's
 	 * shut-down semantics — a never-registered debug panel removes as a
 	 * no-op.
 	 */

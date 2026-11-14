@@ -111,7 +111,8 @@ public class PohDetectorTest
 		HouseScan scan = HouseScan.of(List.of(ObjectID.POH_SPIRIT_RING, ObjectID.POH_JEWELLERY_BOX_2,
 			ObjectID.POH_TROPHY_AMULETOFGLORY_4, ObjectID.POH_PORTAL_TEAK_ARDOUGNE, ObjectID.POH_NEXUS_PORTAL_1));
 		java.util.Map<shortestpath.settings.ConfigKey, Object> unread = PohDetector.visitValues(scan, null);
-		assertEquals(true, unread.get(shortestpath.settings.ConfigKey.USE_POH));
+		// The player's own Use POH still decides whether house teleports are used at all.
+		assertFalse(unread.containsKey(shortestpath.settings.ConfigKey.USE_POH));
 		assertEquals(true, unread.get(shortestpath.settings.ConfigKey.USE_POH_FAIRY_RING));
 		assertEquals(true, unread.get(shortestpath.settings.ConfigKey.USE_POH_SPIRIT_TREE));
 		assertEquals(false, unread.get(shortestpath.settings.ConfigKey.USE_POH_OBELISK));
