@@ -5996,6 +5996,33 @@
 1374 9667 0	1347 9590 0	Pass-through Entrance 51377							
 1375 9667 0	1347 9590 0	Pass-through Entrance 51377							
 									
+# Streambound Cavern - Earthbound Cavern cave passage									
+1521 9719 0	1390 9676 0	Pass-through Entrance 51378							
+1522 9719 0	1390 9676 0	Pass-through Entrance 51378							
+1523 9719 0	1390 9676 0	Pass-through Entrance 51378							
+1389 9676 0	1522 9719 0	Pass-through Entrance 51378							
+1390 9676 0	1522 9719 0	Pass-through Entrance 51378							
+1391 9676 0	1522 9719 0	Pass-through Entrance 51378							
+# Streambound Cavern - Ancient Shrine passage									
+1526 9670 0	1513 9596 0	Pass-through Entrance 51377							
+1526 9671 0	1513 9596 0	Pass-through Entrance 51377							
+1526 9672 0	1513 9596 0	Pass-through Entrance 51377							
+1511 9597 0	1526 9671 0	Pass-through Entrance 51377							
+1512 9596 0	1526 9671 0	Pass-through Entrance 51377							
+1513 9596 0	1526 9671 0	Pass-through Entrance 51377							
+1514 9596 0	1526 9671 0	Pass-through Entrance 51377							
+1515 9597 0	1526 9671 0	Pass-through Entrance 51377							
+# Ancient Shrine - Ancient Prison passage									
+1511 9562 0	1355 9538 0	Pass-through Entrance 51377							
+1512 9563 0	1355 9538 0	Pass-through Entrance 51377							
+1513 9563 0	1355 9538 0	Pass-through Entrance 51377							
+1514 9563 0	1355 9538 0	Pass-through Entrance 51377							
+1515 9562 0	1355 9538 0	Pass-through Entrance 51377							
+1354 9538 0	1513 9563 0	Pass-through Entrance 51375							
+1355 9538 0	1513 9563 0	Pass-through Entrance 51375							
+1356 9538 0	1513 9563 0	Pass-through Entrance 51375							
+1357 9538 0	1513 9563 0	Pass-through Entrance 51375							
+									
 # Blue Moon lobby - conservatively require the stage 28 fight unlock on entry									
 1403 9703 0	1440 9653 0	Pass-through Entrance 51377				9819>27			
 1403 9704 0	1440 9653 0	Pass-through Entrance 51377				9819>27			
