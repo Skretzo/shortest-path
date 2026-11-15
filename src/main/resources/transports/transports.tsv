@@ -5961,6 +5961,34 @@
 1429 9585 0	1431 9585 0	Squeeze-through Door 51005							
 1431 9585 0	1429 9585 0	Squeeze-through Door 51005							
 									
+# Neypotzli entrance - Perilous Moons stage 7 follows Jessamine granting entry									
+1439 9599 1	1440 9615 1	Pass-through Entrance 51375				9819>6			
+1440 9599 1	1440 9615 1	Pass-through Entrance 51375				9819>6			
+1439 9615 1	1439 9599 1	Pass-through Entrance 51377							
+1440 9615 1	1439 9599 1	Pass-through Entrance 51377							
+1441 9615 1	1439 9599 1	Pass-through Entrance 51377							
+# Ancient Prison - conservatively require the stage 10 campsite task on cavern entry									
+1421 9615 1	1388 9575 0	Pass-through Entrance 51376				9819>9			
+1422 9615 1	1388 9575 0	Pass-through Entrance 51376				9819>9			
+1423 9613 1	1388 9575 0	Pass-through Entrance 51376				9819>9			
+1423 9614 1	1388 9575 0	Pass-through Entrance 51376				9819>9			
+1423 9615 1	1388 9575 0	Pass-through Entrance 51376				9819>9			
+1388 9575 0	1423 9615 1	Pass-through Entrance 51375							
+1389 9575 0	1423 9615 1	Pass-through Entrance 51375							
+# Earthbound Cavern									
+1421 9649 1	1403 9717 0	Pass-through Entrance 51376				9819>9			
+1422 9649 1	1403 9717 0	Pass-through Entrance 51376				9819>9			
+1423 9649 1	1403 9717 0	Pass-through Entrance 51376				9819>9			
+1423 9650 1	1403 9717 0	Pass-through Entrance 51376				9819>9			
+1403 9716 0	1423 9649 1	Pass-through Entrance 51375							
+1403 9717 0	1423 9649 1	Pass-through Entrance 51375							
+# Streambound Cavern									
+1457 9649 1	1481 9669 0	Pass-through Entrance 51376				9819>9			
+1457 9650 1	1481 9669 0	Pass-through Entrance 51376				9819>9			
+1458 9649 1	1481 9669 0	Pass-through Entrance 51376				9819>9			
+1480 9669 0	1457 9649 1	Pass-through Entrance 51375							
+1481 9669 0	1457 9649 1	Pass-through Entrance 51375							
+									
 # Observatory Tower & Dungeon									
 2457 3186 0	2355 9394 0	Climb-down Stairs 25432							
 2458 3185 0	2355 9394 0	Climb-down Stairs 25432							
