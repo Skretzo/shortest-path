@@ -5547,6 +5547,10 @@
 2803 2733 2	2803 2735 0	Climb-down Bamboo Ladder 4744						1	
 2803 2727 2	2806 2724 0	Jump off End of bridge 4745						4	
 									
+# Pothole Dungeon (Jogre Cave)									
+2823 3119 0	2830 9520 0	Search Rocks 2584							Yes, I'll enter the cave.
+2830 9522 0	2823 3120 0	Climb Hand holds 2585							
+									
 # Tomb of Bervirius									
 2762 2989 0	2760 9389 0	Search Well stacked rocks 2234						15	
 2764 9376 0	2765 2976 0	Climb Climbing rocks 2236						15	
