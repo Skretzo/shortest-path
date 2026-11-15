@@ -5996,6 +5996,29 @@
 1374 9667 0	1347 9590 0	Pass-through Entrance 51377							
 1375 9667 0	1347 9590 0	Pass-through Entrance 51377							
 									
+# Blood Moon lobby - conservatively require the stage 28 fight unlock on entry									
+1387 9589 0	1418 9632 0	Pass-through Entrance 51375				9819>27			
+1387 9590 0	1418 9632 0	Pass-through Entrance 51375				9819>27			
+1387 9591 0	1418 9632 0	Pass-through Entrance 51375				9819>27			
+1387 9592 0	1418 9632 0	Pass-through Entrance 51375				9819>27			
+1418 9631 0	1387 9591 0	Pass-through Entrance 51377							
+1418 9632 0	1387 9591 0	Pass-through Entrance 51377							
+1418 9633 0	1387 9591 0	Pass-through Entrance 51377							
+# Blood Moon statue - fights unlock at stage 28; require Blood Moon not yet subdued									
+1410 9630 0	1390 9628 0	Use Statue 51372				9819>27;9858=0			
+1410 9634 0	1390 9628 0	Use Statue 51372				9819>27;9858=0			
+1411 9630 0	1390 9628 0	Use Statue 51372				9819>27;9858=0			
+1411 9634 0	1390 9628 0	Use Statue 51372				9819>27;9858=0			
+1412 9630 0	1390 9628 0	Use Statue 51372				9819>27;9858=0			
+1412 9634 0	1390 9628 0	Use Statue 51372				9819>27;9858=0			
+1413 9631 0	1390 9628 0	Use Statue 51372				9819>27;9858=0			
+1413 9632 0	1390 9628 0	Use Statue 51372				9819>27;9858=0			
+1413 9633 0	1390 9628 0	Use Statue 51372				9819>27;9858=0			
+# Blood Moon quick escape to the antechamber									
+1406 9631 0	1441 9637 1	Quick-escape Stairs 53003							
+1406 9632 0	1441 9637 1	Quick-escape Stairs 53003							
+1406 9633 0	1441 9637 1	Quick-escape Stairs 53003							
+									
 # Eclipse Moon statue - fights unlock at stage 28; require Eclipse Moon not yet subdued									
 1466 9631 0	1486 9628 0	Use Statue 51374				9819>27;9860=0			
 1466 9632 0	1486 9628 0	Use Statue 51374				9819>27;9860=0			
@@ -6010,7 +6033,6 @@
 1474 9631 0	1441 9637 1	Quick-escape Stairs 53003							
 1474 9632 0	1441 9637 1	Quick-escape Stairs 53003							
 1474 9633 0	1441 9637 1	Quick-escape Stairs 53003							
-1475 9631 0	1441 9637 1	Quick-escape Stairs 53003							
 									
 # Observatory Tower & Dungeon									
 2457 3186 0	2355 9394 0	Climb-down Stairs 25432							
