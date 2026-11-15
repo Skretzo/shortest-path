@@ -282,6 +282,7 @@ public interface ShortestPathConfig extends Config
 		position = 28,
 		section = sectionSettings
 	)
+	@Range(min = 0, max = 10000)
 	default int costBankVisit()
 	{
 		return 0;
