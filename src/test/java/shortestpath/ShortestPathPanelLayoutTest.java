@@ -39,6 +39,7 @@ import javax.swing.JPanel;
 import javax.swing.ListCellRenderer;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
@@ -667,6 +668,29 @@ public class ShortestPathPanelLayoutTest
 		return null;
 	}
 
+
+	@Test
+	public void numberBoxesKeepTheirLimits() throws NoSuchMethodException
+	{
+		newPanel();
+		assertLimits("recalculateDistance", -1, 20000);
+		assertLimits("reachedDistance", -1, 50);
+		assertLimits("unreachableTargetDistance", 0, 20000);
+		assertLimits("calculationCutoff", 1, 30);
+		assertLimits("aStarHeuristicWeight", 100, 300);
+		SpinnerNumberModel model = (SpinnerNumberModel) spinnerIn(transportCardByKey("useAgilityShortcuts")).getModel();
+		assertEquals(0, model.getMinimum());
+		assertEquals(10000, model.getMaximum());
+	}
+
+	private static void assertLimits(String method, int min, int max) throws NoSuchMethodException
+	{
+		net.runelite.client.config.Range range = ShortestPathConfig.class.getMethod(method)
+			.getAnnotation(net.runelite.client.config.Range.class);
+		assertNotNull(method + " range", range);
+		assertEquals(method + " min", min, range.min());
+		assertEquals(method + " max", max, range.max());
+	}
 
 	@Test
 	public void everyTransportCardRequestsAnIcon()

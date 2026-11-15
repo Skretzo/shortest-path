@@ -29,14 +29,14 @@ unlockMorUlRek	Mor Ul Rek Inner City Unlocked	Enable after showing a fire cape t
 includeBankPath	Include Path To Bank	Whether to include the path to the closest bank<br>when suggesting teleports from the bank		
 currencyThreshold	Currency Threshold	The maximum amount of currency to use on a single transportation method.<br>The currencies affected by the threshold are coins, trading sticks, ecto-tokens and warrior guild tokens.		
 cancelInstead	Cancel Instead Of Recalculating	Whether the path should be cancelled rather than recalculated when the recalculate distance limit is exceeded		
-recalculateDistance	Recalculate Distance	Distance from the path the player should be for it to be recalculated (-1 for never)		
-finishDistance	Finish Distance	Distance from the target tile at which the path should be ended (-1 for never)		
-unreachableTargetDistanceThreshold	Unreachable Target Distance	Distance from the target at which a finished path is considered not to reach the target.<br>Useful for determining if a path is potentially invalid.		
+recalculateDistance	Recalculate Distance	Distance from the path the player should be for it to be recalculated (-1 for never)	-1	20000
+finishDistance	Finish Distance	Distance from the target tile at which the path should be ended (-1 for never)	-1	50
+unreachableTargetDistanceThreshold	Unreachable Target Distance	Distance from the target at which a finished path is considered not to reach the target.<br>Useful for determining if a path is potentially invalid.	0	20000
 showUnreachableText	Show Unreachable Text	Whether to display text on the player tile when the destination cannot be reached		
 showTileCounter	Show Tile Counter	Whether to display the number of tiles travelled, number of tiles remaining or disable counting		
 tileCounterStep	Tile Counter Step	The number of tiles between the displayed tile counter numbers		
-calculationCutoff	Calculation Cutoff	The cutoff threshold in number of ticks (0.6 seconds) of no progress being<br>made towards the path target before the calculation will be stopped		
-aStarHeuristicWeight	A* Heuristic Weight	Makes the A* backend search faster at the price of a suboptimal route.<br>The route costs at most this percentage of the optimal route's cost:<br>100 always finds the optimal route, 300 may find one up to 3x as costly.		
+calculationCutoff	Calculation Cutoff	The cutoff threshold in number of ticks (0.6 seconds) of no progress being<br>made towards the path target before the calculation will be stopped	1	30
+aStarHeuristicWeight	A* Heuristic Weight	Makes the A* backend search faster at the price of a suboptimal route.<br>The route costs at most this percentage of the optimal route's cost:<br>100 always finds the optimal route, 300 may find one up to 3x as costly.	100	300
 showTransportInfo	Show Transport Info	Whether to display transport destination hint info, e.g. which chat option and text to click		
 showBankPickupInfo	Show Transport Hint At Pickup	When standing at a bank on the path, also show the transport hint for the next step requiring an item pickup		
 highlightBankPickupItems	Highlight Bank Pickup Items	Highlight items in the bank that need to be picked up for the current path		
@@ -53,32 +53,32 @@ pohJewelleryBoxTier	POH Jewellery Box Tier	The tier of jewellery box built in yo
 pohMountedItems	POH Mounted Items	Select the mounted POH items available in your house		
 usePohMountedItems				
 usePohObelisk	POH Wilderness Obelisk	Whether to include the POH wilderness obelisk in the path.<br>Enable this if you have built an obelisk in your house (80 Construction or boosted)		
-costAgilityShortcuts	Agility Shortcut Threshold	How many extra tiles an agility shortcut must save<br>to be preferred over walking or other transports		
-costGrappleShortcuts	Grapple Shortcut Threshold	How many extra tiles a grapple shortcut must save<br>to be preferred over walking or other transports		
-costBoats	Boat Threshold	How many extra tiles a small boat must save<br>to be preferred over walking or other transports		
-costCanoes	Canoe Threshold	How many extra tiles a canoe must save<br>to be preferred over walking or other transports		
-costCharterShips	Charter Ship Threshold	How many extra tiles a charter ship must save<br>to be preferred over walking or other transports		
-costShips	Ship Threshold	How many extra tiles a passenger ship must save<br>to be preferred over walking or other transports		
-costFairyRings	Fairy Ring Threshold	How many extra tiles a fairy ring must save<br>to be preferred over walking or other transports		
-costGnomeGliders	Gnome Glider Threshold	How many extra tiles a gnome glider must save<br>to be preferred over walking or other transports		
-costHotAirBalloons	Hot Air Balloon Threshold	How many extra tiles a hot air balloon must save<br>to be preferred over walking or other transports		
-costMagicCarpets	Magic Carpets Threshold	How many extra tiles a magic carpet must save<br>to be preferred over walking or other transports		
-costMagicMushtrees	Magic Mushtrees Threshold	How many extra tiles a magic mushtree must save<br>to be preferred over walking or other transports		
-costMinecarts	Minecart Threshold	How many extra tiles a minecart must save<br>to be preferred over walking or other transports		
-costQuetzals	Quetzal Threshold	How many extra tiles a quetzal must save<br>to be preferred over walking or other transports		
-costQuetzalWhistle	Quetzal Whistle Threshold	How many extra tiles a quetzal whistle teleport must save<br>to be preferred over using a landing site		
-costSpiritTrees	Spirit Tree Threshold	How many extra tiles a spirit tree must save<br>to be preferred over walking or other transports		
-costNonConsumableTeleportationItems	Teleportation Item (Non-Consumable) Threshold	How many extra tiles a non-consumable (permanent) teleportation item<br>must save to be preferred over walking or other transports		
-costConsumableTeleportationItems	Teleportation Item (Consumable) Threshold	How many extra tiles a consumable (non-permanent) teleportation item<br>must save to be preferred over walking or other transports		
-costTeleportationBoxes	Teleportation Box Threshold	How many extra tiles a teleportation box must save<br>to be preferred over walking or other transports		
-costTeleportationLevers	Teleportation Lever Threshold	How many extra tiles a teleportation lever must save<br>to be preferred over walking or other transports		
-costTeleportationPortals	Teleportation Portal Threshold	How many extra tiles a teleportation portal (including POH<br>nexus portals) must save to be preferred over walking or<br>other transports		
-costTeleportationSpells	Teleportation Spell Threshold	How many extra tiles a teleportation spell must save<br>to be preferred over walking or other transports		
-costTeleportationSpellsHome	Home Teleport Spell Threshold	How many extra tiles a Home Teleport spell must save<br>to be preferred over walking or other transports		
-costTeleportationMinigames	Teleportation To Minigame Threshold	How many extra tiles a minigame teleport must save<br>to be preferred over walking or other transports		
-costWildernessObelisks	Wilderness Obelisk Threshold	How many extra tiles a wilderness obelisk must save<br>to be preferred over walking or other transports		
-costSeasonalTransports	Seasonal Transport Threshold	How many extra tiles a seasonal transport must save<br>to be preferred over walking or other transports		
-costBankVisit	Bank Visit Threshold	How many extra tiles fetching a teleport item from your bank must save<br>to be preferred over options already at hand (0 treats banking as free)		
+costAgilityShortcuts	Agility Shortcut Threshold	How many extra tiles an agility shortcut must save<br>to be preferred over walking or other transports	0	10000
+costGrappleShortcuts	Grapple Shortcut Threshold	How many extra tiles a grapple shortcut must save<br>to be preferred over walking or other transports	0	10000
+costBoats	Boat Threshold	How many extra tiles a small boat must save<br>to be preferred over walking or other transports	0	10000
+costCanoes	Canoe Threshold	How many extra tiles a canoe must save<br>to be preferred over walking or other transports	0	10000
+costCharterShips	Charter Ship Threshold	How many extra tiles a charter ship must save<br>to be preferred over walking or other transports	0	10000
+costShips	Ship Threshold	How many extra tiles a passenger ship must save<br>to be preferred over walking or other transports	0	10000
+costFairyRings	Fairy Ring Threshold	How many extra tiles a fairy ring must save<br>to be preferred over walking or other transports	0	10000
+costGnomeGliders	Gnome Glider Threshold	How many extra tiles a gnome glider must save<br>to be preferred over walking or other transports	0	10000
+costHotAirBalloons	Hot Air Balloon Threshold	How many extra tiles a hot air balloon must save<br>to be preferred over walking or other transports	0	10000
+costMagicCarpets	Magic Carpets Threshold	How many extra tiles a magic carpet must save<br>to be preferred over walking or other transports	0	10000
+costMagicMushtrees	Magic Mushtrees Threshold	How many extra tiles a magic mushtree must save<br>to be preferred over walking or other transports	0	10000
+costMinecarts	Minecart Threshold	How many extra tiles a minecart must save<br>to be preferred over walking or other transports	0	10000
+costQuetzals	Quetzal Threshold	How many extra tiles a quetzal must save<br>to be preferred over walking or other transports	0	10000
+costQuetzalWhistle	Quetzal Whistle Threshold	How many extra tiles a quetzal whistle teleport must save<br>to be preferred over using a landing site	0	10000
+costSpiritTrees	Spirit Tree Threshold	How many extra tiles a spirit tree must save<br>to be preferred over walking or other transports	0	10000
+costNonConsumableTeleportationItems	Teleportation Item (Non-Consumable) Threshold	How many extra tiles a non-consumable (permanent) teleportation item<br>must save to be preferred over walking or other transports	0	10000
+costConsumableTeleportationItems	Teleportation Item (Consumable) Threshold	How many extra tiles a consumable (non-permanent) teleportation item<br>must save to be preferred over walking or other transports	0	10000
+costTeleportationBoxes	Teleportation Box Threshold	How many extra tiles a teleportation box must save<br>to be preferred over walking or other transports	0	10000
+costTeleportationLevers	Teleportation Lever Threshold	How many extra tiles a teleportation lever must save<br>to be preferred over walking or other transports	0	10000
+costTeleportationPortals	Teleportation Portal Threshold	How many extra tiles a teleportation portal (including POH<br>nexus portals) must save to be preferred over walking or<br>other transports	0	10000
+costTeleportationSpells	Teleportation Spell Threshold	How many extra tiles a teleportation spell must save<br>to be preferred over walking or other transports	0	10000
+costTeleportationSpellsHome	Home Teleport Spell Threshold	How many extra tiles a Home Teleport spell must save<br>to be preferred over walking or other transports	0	10000
+costTeleportationMinigames	Teleportation To Minigame Threshold	How many extra tiles a minigame teleport must save<br>to be preferred over walking or other transports	0	10000
+costWildernessObelisks	Wilderness Obelisk Threshold	How many extra tiles a wilderness obelisk must save<br>to be preferred over walking or other transports	0	10000
+costSeasonalTransports	Seasonal Transport Threshold	How many extra tiles a seasonal transport must save<br>to be preferred over walking or other transports	0	10000
+costBankVisit	Bank Visit Threshold	How many extra tiles fetching a teleport item from your bank must save<br>to be preferred over options already at hand (0 treats banking as free)	0	10000
 unreachableText		Text shown on the player tile when the destination cannot be reached		
 builtTeleportationBoxes		ID=X Y Z;ID=X Y Z;ID=X Y Z		
 builtTeleportationPortalsPoh		ID=X Y Z;ID=X Y Z;ID=X Y Z		
