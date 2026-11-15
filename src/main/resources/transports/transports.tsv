@@ -5989,6 +5989,13 @@
 1480 9669 0	1457 9649 1	Pass-through Entrance 51375							
 1481 9669 0	1457 9649 1	Pass-through Entrance 51375							
 									
+# Ancient Prison - Earthbound Cavern passage									
+1347 9590 0	1374 9667 0	Pass-through Entrance 51375							
+1347 9591 0	1374 9667 0	Pass-through Entrance 51375							
+1373 9667 0	1347 9590 0	Pass-through Entrance 51377							
+1374 9667 0	1347 9590 0	Pass-through Entrance 51377							
+1375 9667 0	1347 9590 0	Pass-through Entrance 51377							
+									
 # Eclipse Moon statue - fights unlock at stage 28; require Eclipse Moon not yet subdued									
 1466 9631 0	1486 9628 0	Use Statue 51374				9819>27;9860=0			
 1466 9632 0	1486 9628 0	Use Statue 51374				9819>27;9860=0			
