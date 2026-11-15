@@ -376,8 +376,10 @@ public final class AStarPathfinder implements ActiveSearch
 			long phaseStarted = System.nanoTime();
 			RoutingStatic staticData = routingStatic.get();
 			routingStaticNanos = System.nanoTime() - phaseStarted;
+			StartOverlay startOverlay = StartOverlay.of(staticData, collision, start);
 			GoalRule rule = collisionAwareBlockedTargets
-				? new ReachableGoalRule(collision, transportDestination, packed -> staticData.searchIndex(packed) >= 0,
+				? new ReachableGoalRule(collision, transportDestination,
+					startOverlay::reachable,
 					start, unreachableTargetDistance)
 				: collisionRule;
 			goals = GoalStates.resolve(TargetGoals.resolve(targets.points(), transportDestination, rule), targets,
@@ -431,7 +433,7 @@ public final class AStarPathfinder implements ActiveSearch
 						}
 						return false;
 					}, heuristicWeight, restrictions, deadline::progressed,
-					goals::accepts);
+					goals::accepts, startOverlay);
 				forwardSearchNanos = System.nanoTime() - phaseStarted;
 				stats.nodesChecked += current.counters().statesPopped();
 				stats.transportsChecked += current.counters().transportCandidates();

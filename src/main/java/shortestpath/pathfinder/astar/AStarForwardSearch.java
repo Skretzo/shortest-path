@@ -51,12 +51,23 @@ public final class AStarForwardSearch
 		BooleanSupplier cancelled, boolean optimized, double heuristicWeight, SearchRestrictions restrictions,
 		Runnable progressed, GoalTest goal)
 	{
+		return search(target, heuristic, start, cancelled, optimized, heuristicWeight, restrictions, progressed,
+			goal, StartOverlay.none(target.routingStatic()));
+	}
+
+	/** As above, also walking the land {@code startOverlay} adds around the start. */
+	public static Result search(TargetOverlay target, PreparedHeuristic heuristic, int start,
+		BooleanSupplier cancelled, boolean optimized, double heuristicWeight, SearchRestrictions restrictions,
+		Runnable progressed, GoalTest goal, StartOverlay startOverlay)
+	{
 		if (target == null || heuristic == null || cancelled == null || restrictions == null || progressed == null
-			|| goal == null)
+			|| goal == null || startOverlay == null)
 			throw new NullPointerException();
 		if (heuristic.overlay() != target) throw new IllegalArgumentException("heuristic belongs to another target overlay");
+		if (!startOverlay.belongsTo(target.routingStatic()))
+			throw new IllegalArgumentException("start overlay belongs to other routing data");
 		validateHeuristicWeight(heuristicWeight);
-		SearchCtx ctx = new SearchCtx(target, heuristic, start, optimized, heuristicWeight, restrictions);
+		SearchCtx ctx = new SearchCtx(target, heuristic, start, optimized, heuristicWeight, restrictions, startOverlay);
 		AStarRoute startPath = AStarRoute.of(List.of(new PathStep(start, BankVisitState.CARRIED)), new int[1]);
 		Closest closest = new Closest(target);
 		if (cancelled.getAsBoolean()) return Result.cancelled(ctx.counters.snapshot(ctx.bestBankCost[0]), startPath);
@@ -250,13 +261,13 @@ public final class AStarForwardSearch
 		final int tileStates;
 
 		SearchCtx(TargetOverlay target, PreparedHeuristic heuristic, int start, boolean optimized,
-			double heuristicWeight, SearchRestrictions restrictions)
+			double heuristicWeight, SearchRestrictions restrictions, StartOverlay startOverlay)
 		{
 			this.target = target;
 			this.heuristic = heuristic;
 			this.optimized = optimized;
 			this.heuristicWeight = heuristicWeight;
-			space = SearchSpace.create(target, start, restrictions);
+			space = SearchSpace.create(target, start, restrictions, startOverlay);
 			capability = capabilityAt(start);
 			tileStates = space.tileCount * 2;
 			int stateCount = tileStates + (capability == TeleportCapability.ALL ? 0 : HUB_STATES);
@@ -494,6 +505,7 @@ public final class AStarForwardSearch
 			BankVisitState banked = (state & 1) != 0 ? BankVisitState.BANKED : BankVisitState.CARRIED;
 			int value = space.isBase(node)
 				? heuristic.estimateBaseNode(space.tile(node), banked, space.stat.routingComponent(node))
+				: space.inStartOverlay(node) ? 0
 				: heuristic.estimate(space.tile(node), banked, space.components(node));
 			page[slot] = value == CostArithmetic.INF ? SearchSpace.CACHED_INF : value + 1;
 			return value;
@@ -762,6 +774,8 @@ public final class AStarForwardSearch
 		private static final int STATUS_BLOCKED_REGION = 4;
 
 		final RoutingStatic stat; final int[] extraTiles, extraSites; final int[][] extraComponents;
+		/** Which extra tiles the start overlay added, by extra index. */
+		private final BitSet startOverlayExtras;
 		final int baseCount, tileCount; private final PreparedRoutingAccount account;
 		private SearchRestrictions restrictions = SearchRestrictions.none();
 		/**
@@ -782,11 +796,12 @@ public final class AStarForwardSearch
 		 */
 		private int[][] heuristicPages;
 		private SearchSpace(RoutingStatic stat, PreparedRoutingAccount account, int[] extraTiles,
-			int[][] extraComponents, int[] extraSites)
+			int[][] extraComponents, int[] extraSites, BitSet startOverlayExtras)
 	{ this.stat = stat; this.account = account; this.extraTiles = extraTiles; this.extraComponents = extraComponents;
-		this.extraSites = extraSites; baseCount = stat.searchTileCount(); tileCount = baseCount + extraTiles.length;
+		this.extraSites = extraSites; this.startOverlayExtras = startOverlayExtras; baseCount = stat.searchTileCount(); tileCount = baseCount + extraTiles.length;
 	}
-		static SearchSpace create(TargetOverlay target, int start, SearchRestrictions restrictions)
+		static SearchSpace create(TargetOverlay target, int start, SearchRestrictions restrictions,
+			StartOverlay startOverlay)
 		{
 			RoutingStatic stat = target.routingStatic(); int[] values = new int[stat.siteCount() + target.targetCount() + 1]; int count = 0;
 			for (int site = 0; site < stat.siteCount(); site++) count = add(values, count, stat.siteTile(site), stat);
@@ -796,13 +811,17 @@ public final class AStarForwardSearch
 	{ int value = values[i], j = i - 1; while (j >= 0 && Integer.compareUnsigned(values[j], value) > 0) values[j + 1] = values[j--]; values[j + 1] = value;
 	}
 			int extraCount = 0; for (int i = 0; i < count; i++) if (stat.searchIndex(values[i]) < 0) values[extraCount++] = values[i];
-			int[] extras = Arrays.copyOf(values, extraCount); int[][] components = new int[extraCount][];
+			int[] extras = IntArrays.union(Arrays.copyOf(values, extraCount), startOverlay.tiles()); extraCount = extras.length;
+			BitSet overlayExtras = new BitSet(extraCount);
+			if (startOverlay.size() != 0)
+				for (int i = 0; i < extraCount; i++) if (startOverlay.contains(extras[i])) overlayExtras.set(i);
+			int[][] components = new int[extraCount][];
 			int[] sites = new int[extraCount];
 			for (int i = 0; i < extraCount; i++)
 	{ int tile = extras[i], site = stat.siteIndex(tile), targetIndex = target.targetIndex(tile); sites[i] = site;
 		components[i] = targetIndex >= 0 ? target.componentsView(targetIndex) : site >= 0 ? stat.siteComponents(site) : stat.attachments(tile, target.collision());
 	}
-			SearchSpace space = new SearchSpace(stat, target.account(), extras, components, sites);
+			SearchSpace space = new SearchSpace(stat, target.account(), extras, components, sites, overlayExtras);
 			space.restrictions = restrictions;
 			if (restrictions.anyGate())
 			{
@@ -821,6 +840,9 @@ public final class AStarForwardSearch
 	}
 		int tile(int node)
 	{ return node < baseCount ? stat.searchTile(node) : extraTiles[node - baseCount];
+	}
+		boolean inStartOverlay(int node)
+	{ return node >= baseCount && startOverlayExtras.get(node - baseCount);
 	}
 		int[] components(int node)
 	{ return extraComponents[node - baseCount];
