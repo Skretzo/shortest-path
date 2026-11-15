@@ -428,7 +428,8 @@ public class PathfinderTest
 	public void ghommalsHiltTrollheimIsUnlimitedFromTheThirdTier()
 	{
 		for (int hilt : new int[]{ItemID.CA_OFFHAND_HARD, ItemID.CA_OFFHAND_ELITE, ItemID.CA_OFFHAND_MASTER,
-			ItemID.CA_OFFHAND_GRANDMASTER, ItemID.INFERNAL_DEFENDER_GHOMMAL_5, ItemID.INFERNAL_DEFENDER_GHOMMAL_6_TROUVER})
+			ItemID.CA_OFFHAND_GRANDMASTER, ItemID.INFERNAL_DEFENDER_GHOMMAL_5, ItemID.INFERNAL_DEFENDER_GHOMMAL_5_TROUVER,
+			ItemID.INFERNAL_DEFENDER_GHOMMAL_6, ItemID.INFERNAL_DEFENDER_GHOMMAL_6_TROUVER})
 		{
 			assertTrue("item " + hilt, hiltTeleportUsable(hilt, 5, 0, GHOMMALS_TROLLHEIM));
 		}
@@ -460,11 +461,38 @@ public class PathfinderTest
 	@Test
 	public void ghommalsHiltMorUlRekNeedsTheInnerCityUnlock()
 	{
-		setupInventory(new Item(ItemID.CA_OFFHAND_GRANDMASTER, 1));
-		config.set("unlockMorUlRek", false);
-		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY, Map.of());
-		assertFalse(hasUsableTeleport(GHOMMALS_MOR_UL_REK));
-		assertTrue(hasUsableTeleport(GHOMMALS_TROLLHEIM));
+		// One id per Mor Ul Rek row, so every row's unlock term is evaluated.
+		for (int hilt : new int[]{ItemID.CA_OFFHAND_ELITE, ItemID.CA_OFFHAND_MASTER,
+			ItemID.INFERNAL_DEFENDER_GHOMMAL_5, ItemID.CA_OFFHAND_GRANDMASTER})
+		{
+			setupInventory(new Item(hilt, 1));
+			config.set("unlockMorUlRek", false);
+			setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY, Map.of());
+			assertFalse("item " + hilt, hasUsableTeleport(GHOMMALS_MOR_UL_REK));
+			assertTrue("item " + hilt, hasUsableTeleport(GHOMMALS_TROLLHEIM));
+		}
+	}
+
+	@Test
+	public void ghommalsHiltKeepsTheInnerCityUnlockInTheModesThatSkipItems()
+	{
+		for (TeleportationItem mode : new TeleportationItem[]{TeleportationItem.ALL, TeleportationItem.UNLOCKED})
+		{
+			for (int uses : new int[]{0, 9})
+			{
+				for (boolean unlocked : new boolean[]{false, true})
+				{
+					String context = mode + " with " + uses + " uses and unlock " + unlocked;
+					setupInventory();
+					config.set("unlockMorUlRek", unlocked);
+					setupConfig(QuestState.FINISHED, 99, mode, Map.of(
+						VarbitID.CA_TELEPORT_COUNT_TROLLHEIM, uses,
+						VarbitID.CA_TELEPORT_COUNT_MORULREK, uses));
+					assertTrue("Trollheim under " + context, hasUsableTeleport(GHOMMALS_TROLLHEIM));
+					assertEquals("Mor Ul Rek under " + context, unlocked, hasUsableTeleport(GHOMMALS_MOR_UL_REK));
+				}
+			}
+		}
 	}
 
 	private static final String XERICS_HONOUR = "Xeric's talisman: 5. Xeric's Honour";
