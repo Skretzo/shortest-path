@@ -5989,6 +5989,22 @@
 1480 9669 0	1457 9649 1	Pass-through Entrance 51375							
 1481 9669 0	1457 9649 1	Pass-through Entrance 51375							
 									
+# Eclipse Moon statue - fights unlock at stage 28; require Eclipse Moon not yet subdued									
+1466 9631 0	1486 9628 0	Use Statue 51374				9819>27;9860=0			
+1466 9632 0	1486 9628 0	Use Statue 51374				9819>27;9860=0			
+1466 9633 0	1486 9628 0	Use Statue 51374				9819>27;9860=0			
+1467 9630 0	1486 9628 0	Use Statue 51374				9819>27;9860=0			
+1467 9634 0	1486 9628 0	Use Statue 51374				9819>27;9860=0			
+1468 9630 0	1486 9628 0	Use Statue 51374				9819>27;9860=0			
+1468 9634 0	1486 9628 0	Use Statue 51374				9819>27;9860=0			
+1469 9630 0	1486 9628 0	Use Statue 51374				9819>27;9860=0			
+1469 9634 0	1486 9628 0	Use Statue 51374				9819>27;9860=0			
+# Eclipse Moon quick escape to the antechamber									
+1474 9631 0	1441 9637 1	Quick-escape Stairs 53003							
+1474 9632 0	1441 9637 1	Quick-escape Stairs 53003							
+1474 9633 0	1441 9637 1	Quick-escape Stairs 53003							
+1475 9631 0	1441 9637 1	Quick-escape Stairs 53003							
+									
 # Observatory Tower & Dungeon									
 2457 3186 0	2355 9394 0	Climb-down Stairs 25432							
 2458 3185 0	2355 9394 0	Climb-down Stairs 25432							
