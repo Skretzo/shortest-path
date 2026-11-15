@@ -5440,6 +5440,10 @@
 2512 3511 0	1768 5366 1	Jump-into Whirlpool 25274				3759>1		2	
 1768 5366 1	1772 5366 0	Climb-down Stairs 25338							
 1778 5346 0	1778 5343 1	Climb-up Stairs 25339						2	
+# Dragon forge entry: conservatively require all three DS2 dragon heads lit.									
+1745 5325 0	1744 5321 1	Climb-up Rough hewn steps 32212				6109=1;6110=1;6111=1		3	
+1744 5325 0	1744 5321 1	Climb-up Rough hewn steps 32212				6109=1;6110=1;6111=1		2	
+1744 5321 1	1744 5325 0	Climb-down Rough hewn steps 32211						2	
 1741 5352 0	2531 3446 0	Ride Aged log 25216						2	
 1741 5353 0	2531 3446 0	Ride Aged log 25216						2	
 1741 5354 0	2531 3446 0	Ride Aged log 25216						2	
