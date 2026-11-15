@@ -102,5 +102,6 @@ UNREACHABLE_TEXT	unreachableText	String		Destination could not be reached	DISPLA
 BUILT_TELEPORTATION_BOXES	builtTeleportationBoxes	String			DISPLAY_ONLY
 BUILT_TELEPORTATION_PORTALS_POH	builtTeleportationPortalsPoh	String			DISPLAY_ONLY
 BLOCKED_TELEPORT_ITEMS	blockedTeleportItems	String			ROUTE_INVALIDATING
+RESTRICTIONS_OWNED_ONLY	restrictionsOwnedOnly	boolean		false	DISPLAY_ONLY
 UNLOCK_BALLOON_LOG_BASKET	unlockBalloonLogBasket	boolean		false	ROUTE_INVALIDATING
 BALLOON_LOG_BASKET_ROUTES	balloonLogBasketRoutes	Set	BalloonRoute	flag:unlockBalloonLogBasket	ROUTE_INVALIDATING
