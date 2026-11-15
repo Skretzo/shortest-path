@@ -44,29 +44,6 @@ public final class DestinationRequirements
 		this.varPlayers = varPlayers != null ? varPlayers : Collections.emptySet();
 	}
 
-	/**
-	 * @return a merged requirement when the same tile appears on multiple rows (max skills, union sets).
-	 */
-	public static DestinationRequirements merge(DestinationRequirements a, DestinationRequirements b)
-	{
-		if (a == null || a.isEmpty())
-		{
-			return b != null ? b : EMPTY;
-		}
-		if (b == null || b.isEmpty())
-		{
-			return a;
-		}
-		SkillLevels skills = SkillLevels.merge(a.skillLevels, b.skillLevels);
-		Set<Quest> q = new HashSet<>(a.quests);
-		q.addAll(b.quests);
-		Set<VarRequirement> vb = new HashSet<>(a.varbits);
-		vb.addAll(b.varbits);
-		Set<VarRequirement> vp = new HashSet<>(a.varPlayers);
-		vp.addAll(b.varPlayers);
-		return new DestinationRequirements(skills, q, vb, vp);
-	}
-
 	public boolean isEmpty()
 	{
 		if (!quests.isEmpty())

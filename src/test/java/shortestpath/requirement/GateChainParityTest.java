@@ -158,7 +158,7 @@ public class GateChainParityTest
 	 * captured map.
 	 */
 	private static RequirementContext capture(MapPlayerStateSource source, TestRequirementHooks hooks,
-		List<Transport> transports, Map<Integer, DestinationRequirements> bankRequirements)
+		List<Transport> transports, Map<Integer, List<DestinationRequirements>> bankRequirements)
 	{
 		return RequirementContext.capture(source, hooks, RequirementTestFixtures.policy(MODE), 0L,
 			transports, bankRequirements, null, Set.of(), false, new LeagueModeState(), null, Set.of());
@@ -543,14 +543,14 @@ public class GateChainParityTest
 
 		TestRequirementHooks finished = new TestRequirementHooks().questState(QuestState.FINISHED);
 		RequirementContext done = capture(new MapPlayerStateSource(), finished,
-			List.of(), Map.of(BANK_TILE, gated));
+			List.of(), Map.of(BANK_TILE, List.of(gated)));
 		lines.add(bankVerdict("bank-quest/finished",
 			RequirementTestFixtures.requirements(done, RequirementTestFixtures.policy(MODE), finished),
 			gated));
 
 		TestRequirementHooks unfinished = new TestRequirementHooks().questState(QuestState.NOT_STARTED);
 		RequirementContext notDone = capture(new MapPlayerStateSource(), unfinished,
-			List.of(), Map.of(BANK_TILE, gated));
+			List.of(), Map.of(BANK_TILE, List.of(gated)));
 		lines.add(bankVerdict("bank-quest/not-started",
 			RequirementTestFixtures.requirements(notDone, RequirementTestFixtures.policy(MODE), unfinished),
 			gated));

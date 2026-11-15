@@ -116,23 +116,6 @@ public class SkillLevelsTest
 	}
 
 	@Test
-	public void mergeTakesTheElementwiseMaximum()
-	{
-		SkillLevels cooking50 = requiring(Skill.COOKING.ordinal(), 50);
-		SkillLevels cooking70 = requiring(Skill.COOKING.ordinal(), 70);
-		SkillLevels merged = SkillLevels.merge(cooking50, cooking70);
-		assertEquals(70, merged.get(Skill.COOKING));
-		assertEquals(SkillLevels.LENGTH, merged.length());
-
-		// The empty arm hands back the other side — no allocation.
-		assertSame(cooking50, SkillLevels.merge(cooking50, SkillLevels.NONE));
-		assertSame(cooking70, SkillLevels.merge(SkillLevels.NONE, cooking70));
-		assertSame(SkillLevels.NONE, SkillLevels.merge(null, null));
-		assertSame(cooking50, SkillLevels.merge(cooking50, null));
-		assertSame(cooking70, SkillLevels.merge(null, cooking70));
-	}
-
-	@Test
 	public void equalsAndHashCodeFollowTheContents()
 	{
 		SkillLevels first = SkillLevels.of(maxed());
