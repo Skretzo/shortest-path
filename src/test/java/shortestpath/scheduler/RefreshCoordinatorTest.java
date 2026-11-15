@@ -569,13 +569,112 @@ public class RefreshCoordinatorTest
 		verify(scheduler).restart("items changed", 50, Targets.at(Set.of(TARGET)));
 	}
 
-	@Test
-	public void loggingOutForgetsOpenPanels()
+	private void assertStateForgetsOpenPanels(GameState state)
 	{
 		standingOnTheRoute();
 
 		coordinator.widgetLoaded(InterfaceID.BANKMAIN);
-		coordinator.gameStateChanged(GameState.LOGIN_SCREEN, 10);
+		coordinator.gameStateChanged(state, 10);
+		coordinator.itemsChanged(inventoryChanged());
+		tick(20);
+
+		verify(scheduler, never()).restart(anyString(), anyInt(), any(Targets.class));
+	}
+
+	@Test
+	public void loggingOutForgetsOpenPanels()
+	{
+		assertStateForgetsOpenPanels(GameState.LOGIN_SCREEN);
+	}
+
+	@Test
+	public void hoppingForgetsOpenPanels()
+	{
+		assertStateForgetsOpenPanels(GameState.HOPPING);
+	}
+
+	@Test
+	public void losingTheConnectionForgetsOpenPanels()
+	{
+		assertStateForgetsOpenPanels(GameState.CONNECTION_LOST);
+	}
+
+	@Test
+	public void ordinaryStateChangesKeepOpenPanels()
+	{
+		standingOnTheRoute();
+
+		coordinator.widgetLoaded(InterfaceID.BANKMAIN);
+		tick(20);
+		coordinator.gameStateChanged(GameState.LOADING, 21);
+		coordinator.gameStateChanged(GameState.LOGGED_IN, 22);
+		coordinator.itemsChanged(inventoryChanged());
+		tick(23);
+
+		verify(scheduler, times(2)).restart("items changed", AT_BANK, Targets.at(Set.of(TARGET)));
+	}
+
+	/**
+	 * Opening the panel re-plans, an item change while it is open re-plans
+	 * again, and once it is closed item changes no longer do.
+	 */
+	private void assertPanelTracksItemChanges(int panel)
+	{
+		standingOnTheRoute();
+
+		coordinator.widgetLoaded(panel);
+		tick(20);
+		coordinator.itemsChanged(inventoryChanged());
+		tick(21);
+		coordinator.widgetClosed(panel);
+		coordinator.itemsChanged(inventoryChanged());
+		tick(22);
+
+		verify(scheduler, times(2)).restart("items changed", AT_BANK, Targets.at(Set.of(TARGET)));
+	}
+
+	@Test
+	public void theBankIsAnItemPanel()
+	{
+		assertPanelTracksItemChanges(InterfaceID.BANKMAIN);
+	}
+
+	@Test
+	public void theDepositBoxIsAnItemPanel()
+	{
+		assertPanelTracksItemChanges(InterfaceID.BANK_DEPOSITBOX);
+	}
+
+	@Test
+	public void theSharedBankIsAnItemPanel()
+	{
+		assertPanelTracksItemChanges(InterfaceID.SHARED_BANK);
+	}
+
+	@Test
+	public void theShopIsAnItemPanel()
+	{
+		assertPanelTracksItemChanges(InterfaceID.SHOPMAIN);
+	}
+
+	@Test
+	public void theGrandExchangeOffersAreAnItemPanel()
+	{
+		assertPanelTracksItemChanges(InterfaceID.GE_OFFERS);
+	}
+
+	@Test
+	public void theGrandExchangeCollectionIsAnItemPanel()
+	{
+		assertPanelTracksItemChanges(InterfaceID.GE_COLLECT);
+	}
+
+	@Test
+	public void otherInterfacesAreNotItemPanels()
+	{
+		standingOnTheRoute();
+
+		coordinator.widgetLoaded(InterfaceID.TOPLEVEL);
 		coordinator.itemsChanged(inventoryChanged());
 		tick(20);
 
