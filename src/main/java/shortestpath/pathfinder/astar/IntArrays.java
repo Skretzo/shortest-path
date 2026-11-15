@@ -20,6 +20,21 @@ final class IntArrays
 		return false;
 	}
 
+	/** The values of two unsigned-ordered, duplicate-free arrays, likewise. */
+	static int[] union(int[] a, int[] b)
+	{
+		int[] result = new int[a.length + b.length];
+		int i = 0, j = 0, count = 0;
+		while (i < a.length || j < b.length)
+		{
+			int compare = i == a.length ? 1 : j == b.length ? -1 : Integer.compareUnsigned(a[i], b[j]);
+			if (compare <= 0) result[count++] = a[i++];
+			else result[count++] = b[j++];
+			if (compare == 0) j++;
+		}
+		return count == result.length ? result : java.util.Arrays.copyOf(result, count);
+	}
+
 	static int binarySearch(int[] values, int target)
 	{
 		int low = 0, high = values.length - 1;
