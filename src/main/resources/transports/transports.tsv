@@ -5996,6 +5996,20 @@
 1374 9667 0	1347 9590 0	Pass-through Entrance 51377							
 1375 9667 0	1347 9590 0	Pass-through Entrance 51377							
 									
+# Blue Moon lobby - conservatively require the stage 28 fight unlock on entry									
+1403 9703 0	1440 9653 0	Pass-through Entrance 51377				9819>27			
+1403 9704 0	1440 9653 0	Pass-through Entrance 51377				9819>27			
+1403 9705 0	1440 9653 0	Pass-through Entrance 51377				9819>27			
+1439 9653 0	1403 9704 0	Pass-through Entrance 51377							
+1440 9653 0	1403 9704 0	Pass-through Entrance 51377							
+1441 9653 0	1403 9704 0	Pass-through Entrance 51377							
+# Blue Moon quick escape to the antechamber									
+1438 9666 0	1441 9637 1	Quick-escape Stairs 53004							
+1439 9666 0	1441 9637 1	Quick-escape Stairs 53004							
+1440 9666 0	1441 9637 1	Quick-escape Stairs 53004							
+1441 9666 0	1441 9637 1	Quick-escape Stairs 53004							
+1442 9666 0	1441 9637 1	Quick-escape Stairs 53004							
+									
 # Blood Moon lobby - conservatively require the stage 28 fight unlock on entry									
 1387 9589 0	1418 9632 0	Pass-through Entrance 51375				9819>27			
 1387 9590 0	1418 9632 0	Pass-through Entrance 51375				9819>27			
