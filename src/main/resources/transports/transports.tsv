@@ -5929,6 +5929,37 @@
 1436 3128 0	1439 9509 1	Pass-through Entrance 51375			Perilous Moons				
 1439 9509 1	1435 3128 0	Pass-through Entrance 51375			Perilous Moons				
 1440 9509 1	1435 3128 0	Pass-through Entrance 51375			Perilous Moons				
+# Cam Torum squeeze-through doors (north-east guarded house remains inaccessible)									
+1403 9556 1	1403 9558 1	Squeeze-through Door 51005							
+1403 9558 1	1403 9556 1	Squeeze-through Door 51005							
+1403 9565 1	1403 9567 1	Squeeze-through Door 51005							
+1403 9567 1	1403 9565 1	Squeeze-through Door 51005							
+1414 9553 1	1416 9553 1	Squeeze-through Door 51005							
+1416 9553 1	1414 9553 1	Squeeze-through Door 51005							
+1414 9569 1	1416 9569 1	Squeeze-through Door 51005							
+1416 9569 1	1414 9569 1	Squeeze-through Door 51005							
+1426 9587 1	1426 9589 1	Squeeze-through Door 51005							
+1426 9589 1	1426 9587 1	Squeeze-through Door 51005							
+1430 9555 1	1432 9555 1	Squeeze-through Door 51005							
+1432 9555 1	1430 9555 1	Squeeze-through Door 51005							
+1430 9567 1	1432 9567 1	Squeeze-through Door 51005							
+1432 9567 1	1430 9567 1	Squeeze-through Door 51005							
+1447 9555 1	1449 9555 1	Squeeze-through Door 51005							
+1449 9555 1	1447 9555 1	Squeeze-through Door 51005							
+1448 9587 1	1448 9589 1	Squeeze-through Door 51005							
+1448 9589 1	1448 9587 1	Squeeze-through Door 51005							
+1463 9553 1	1465 9553 1	Squeeze-through Door 51005							
+1465 9553 1	1463 9553 1	Squeeze-through Door 51005							
+# Teumo's house: Final Dawn stage 29 sends the player inside to meet Servius.									
+1463 9569 1	1465 9569 1	Squeeze-through Door 56475				16663>28			
+1465 9569 1	1463 9569 1	Squeeze-through Door 56475							
+1478 9553 1	1480 9553 1	Squeeze-through Door 51005							
+1480 9553 1	1478 9553 1	Squeeze-through Door 51005							
+1478 9569 1	1480 9569 1	Squeeze-through Door 51005							
+1480 9569 1	1478 9569 1	Squeeze-through Door 51005							
+# Lost Pickaxe cellar									
+1429 9585 0	1431 9585 0	Squeeze-through Door 51005							
+1431 9585 0	1429 9585 0	Squeeze-through Door 51005							
 									
 # Observatory Tower & Dungeon									
 2457 3186 0	2355 9394 0	Climb-down Stairs 25432							
