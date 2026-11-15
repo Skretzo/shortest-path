@@ -5924,6 +5924,10 @@
 2699 3406 3	2700 3405 2	Climb-down Ladder 16679						2	
 2699 3404 3	2700 3405 2	Climb-down Ladder 16679						2	
 									
+# Dragon Nest									
+1245 9527 0	1289 3136 0	Enter Cave 57592						2	
+1289 3136 0	1245 9527 0	Enter Cave 57591						2	
+									
 # Cam Torum									
 1435 3128 0	1439 9509 1	Pass-through Entrance 51375			Perilous Moons				
 1436 3128 0	1439 9509 1	Pass-through Entrance 51375			Perilous Moons				
