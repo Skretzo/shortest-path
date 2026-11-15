@@ -64,12 +64,13 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 	@Override
 	protected int getPlayerPathIndex(List<PathStep> path)
 	{
-		// A route has one bank stop, and the bank opens from tiles around it, so the player
-		// needn't be standing on it
+		// The route's bank stop is the step where it switches into the banked layer, not any bank
+		// tile on the way, and the bank opens from tiles around it, so the player needn't be standing on it
 		Set<Integer> bankLocations = annotator.getDestinations("bank");
 		for (int i = 0; i < path.size(); i++)
 		{
-			if (bankLocations.contains(path.get(i).getPackedPosition()))
+			if (bankLocations.contains(path.get(i).getPackedPosition())
+				&& BankPickupAnalysis.visitsBankAt(path, i))
 			{
 				return i;
 			}
