@@ -5011,6 +5011,7 @@
 2126 3893 1	2128 3893 2	Climb Ladder 16959						2	
 2118 3893 1	2118 3895 0	Climb Ladder 16962						2	
 2118 3895 0	2118 3893 1	Climb Ladder 16960						2	
+2101 3918 0	2631 3678 0	Teleport Return Orb 29712				4494=1;4534=1		5	
 									
 # Zanaris									
 2469 4438 0	2470 4438 0	Open Magic door 12045		1601=1				1	
@@ -5669,6 +5670,71 @@
 1470 3687 0	1475 3687 0	Climb Handholds 42009						6	
 1460 3690 0	1456 3690 0	Climb Handholds 27362						6	
 1456 3690 0	1460 3690 0	Climb Handholds 42009						6	
+									
+# Lizardman Temple entrances									
+1312 3685 0	1312 10086 0	Enter Lizard dwelling 34405						3	
+1313 3685 0	1312 10086 0	Enter Lizard dwelling 34405						3	
+1314 3665 0	1314 10063 0	Enter Lizard dwelling 34403						3	
+1315 3665 0	1314 10063 0	Enter Lizard dwelling 34403						3	
+1292 3659 0	1292 10057 0	Enter Lizard dwelling 34402						3	
+1293 3659 0	1292 10057 0	Enter Lizard dwelling 34402						3	
+1329 3669 0	1330 10069 0	Enter Lizard dwelling 34404						3	
+1329 3670 0	1330 10069 0	Enter Lizard dwelling 34404						3	
+									
+# Lizardman Temple exit									
+1294 10078 0	1292 3676 0	Jump-in Strange hole 34422						5	
+1294 10077 0	1292 3676 0	Jump-in Strange hole 34422						5	
+1292 10076 0	1292 3676 0	Jump-in Strange hole 34422						5	
+1293 10076 0	1292 3676 0	Jump-in Strange hole 34422						5	
+1292 10079 0	1292 3676 0	Jump-in Strange hole 34422						5	
+1293 10079 0	1292 3676 0	Jump-in Strange hole 34422						5	
+									
+# Lizardman Temple shaman room barriers									
+1293 10091 0	1293 10093 0	Pass Mystical barrier 34642						2	
+1293 10093 0	1293 10091 0	Pass Mystical barrier 34642						2	
+1292 10091 0	1292 10093 0	Pass Mystical barrier 34642						2	
+1292 10093 0	1292 10091 0	Pass Mystical barrier 34642						2	
+1296 10096 0	1298 10096 0	Pass Mystical barrier 34643						2	
+1298 10096 0	1296 10096 0	Pass Mystical barrier 34643						2	
+1296 10097 0	1298 10097 0	Pass Mystical barrier 34643						2	
+1298 10097 0	1296 10097 0	Pass Mystical barrier 34643						2	
+1307 10096 0	1309 10096 0	Pass Mystical barrier 34644						2	
+1309 10096 0	1307 10096 0	Pass Mystical barrier 34644						2	
+1307 10097 0	1309 10097 0	Pass Mystical barrier 34644						2	
+1309 10097 0	1307 10097 0	Pass Mystical barrier 34644						2	
+1316 10096 0	1318 10096 0	Pass Mystical barrier 34645						2	
+1318 10096 0	1316 10096 0	Pass Mystical barrier 34645						2	
+1316 10097 0	1318 10097 0	Pass Mystical barrier 34645						2	
+1318 10097 0	1316 10097 0	Pass Mystical barrier 34645						2	
+1324 10096 0	1326 10096 0	Pass Mystical barrier 34646						2	
+1326 10096 0	1324 10096 0	Pass Mystical barrier 34646						2	
+1324 10097 0	1326 10097 0	Pass Mystical barrier 34646						2	
+1326 10097 0	1324 10097 0	Pass Mystical barrier 34646						2	
+									
+# Lizardman Caves entrance and exit									
+1306 3572 0	1305 9973 0	Enter Lizardman lair 30380						2	
+1307 3572 0	1305 9973 0	Enter Lizardman lair 30380						2	
+1308 3572 0	1305 9973 0	Enter Lizardman lair 30380						2	
+1309 3573 0	1305 9973 0	Enter Lizardman lair 30380						2	
+1309 3574 0	1305 9973 0	Enter Lizardman lair 30380						2	
+1309 3575 0	1305 9973 0	Enter Lizardman lair 30380						2	
+1306 3576 0	1305 9973 0	Enter Lizardman lair 30380						2	
+1307 3576 0	1305 9973 0	Enter Lizardman lair 30380						2	
+1308 3576 0	1305 9973 0	Enter Lizardman lair 30380						2	
+1305 3573 0	1305 9973 0	Enter Lizardman lair 30380						2	
+1305 3574 0	1305 9973 0	Enter Lizardman lair 30380						2	
+1305 3575 0	1305 9973 0	Enter Lizardman lair 30380						2	
+1305 9973 0	1309 3574 0	Squeeze-through Crevice 30381						2	
+									
+# Lizardman Caves shaman crevices									
+1299 9959 0	1295 9959 0	Squeeze-through Crevice 30385						2	
+1295 9959 0	1299 9959 0	Squeeze-through Crevice 30384						2	
+1305 9957 0	1305 9953 0	Squeeze-through Crevice 30383						2	
+1305 9953 0	1305 9957 0	Squeeze-through Crevice 30382						2	
+1318 9960 0	1318 9956 0	Squeeze-through Crevice 30383						2	
+1318 9956 0	1318 9960 0	Squeeze-through Crevice 30382						2	
+1319 9966 0	1323 9966 0	Squeeze-through Crevice 30384						2	
+1323 9966 0	1319 9966 0	Squeeze-through Crevice 30385						2	
 									
 # Asgarnia Ice Dungeon									
 3009 3150 0	3009 9550 0	Climb-down Trapdoor 1738						1	
