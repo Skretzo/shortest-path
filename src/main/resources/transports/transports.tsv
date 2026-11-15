@@ -6030,6 +6030,16 @@
 1439 9653 0	1403 9704 0	Pass-through Entrance 51377							
 1440 9653 0	1403 9704 0	Pass-through Entrance 51377							
 1441 9653 0	1403 9704 0	Pass-through Entrance 51377							
+# Blue Moon statue - fights unlock at stage 28; require Blue Moon not yet subdued									
+1438 9659 0	1443 9681 0	Use Statue 51373				9819>27;9859=0			
+1438 9660 0	1443 9681 0	Use Statue 51373				9819>27;9859=0			
+1438 9661 0	1443 9681 0	Use Statue 51373				9819>27;9859=0			
+1439 9658 0	1443 9681 0	Use Statue 51373				9819>27;9859=0			
+1440 9658 0	1443 9681 0	Use Statue 51373				9819>27;9859=0			
+1441 9658 0	1443 9681 0	Use Statue 51373				9819>27;9859=0			
+1442 9659 0	1443 9681 0	Use Statue 51373				9819>27;9859=0			
+1442 9660 0	1443 9681 0	Use Statue 51373				9819>27;9859=0			
+1442 9661 0	1443 9681 0	Use Statue 51373				9819>27;9859=0			
 # Blue Moon quick escape to the antechamber									
 1438 9666 0	1441 9637 1	Quick-escape Stairs 53004							
 1439 9666 0	1441 9637 1	Quick-escape Stairs 53004							
