@@ -372,6 +372,7 @@
 2909 3334 0	2908 3336 1	Climb-up Staircase 11888						1	
 2908 3336 1	2908 3336 2	Climb-up Staircase 11889						1	
 2908 3336 2	2908 3336 1	Climb-down Staircase 11890						1	
+2906 3336 2	3217 3176 0	Talk-to Zandar Horfyre 5841						4	No, I think I'll stay for a bit.
 									
 # Ferox Enclave									
 3140 3637 0	3137 3637 1	Climb Stairs 39643						1	
@@ -5440,6 +5441,10 @@
 2512 3511 0	1768 5366 1	Jump-into Whirlpool 25274				3759>1		2	
 1768 5366 1	1772 5366 0	Climb-down Stairs 25338							
 1778 5346 0	1778 5343 1	Climb-up Stairs 25339						2	
+# Dragon forge entry: conservatively require all three DS2 dragon heads lit.									
+1745 5325 0	1744 5321 1	Climb-up Rough hewn steps 32212				6109=1;6110=1;6111=1		3	
+1744 5325 0	1744 5321 1	Climb-up Rough hewn steps 32212				6109=1;6110=1;6111=1		2	
+1744 5321 1	1744 5325 0	Climb-down Rough hewn steps 32211						2	
 1741 5352 0	2531 3446 0	Ride Aged log 25216						2	
 1741 5353 0	2531 3446 0	Ride Aged log 25216						2	
 1741 5354 0	2531 3446 0	Ride Aged log 25216						2	
@@ -5542,6 +5547,10 @@
 2803 2735 0	2803 2733 2	Climb-up Bamboo Ladder 4743						1	
 2803 2733 2	2803 2735 0	Climb-down Bamboo Ladder 4744						1	
 2803 2727 2	2806 2724 0	Jump off End of bridge 4745						4	
+									
+# Pothole Dungeon (Jogre Cave)									
+2823 3119 0	2830 9520 0	Search Rocks 2584							Yes, I'll enter the cave.
+2830 9522 0	2823 3120 0	Climb Hand holds 2585							
 									
 # Tomb of Bervirius									
 2762 2989 0	2760 9389 0	Search Well stacked rocks 2234						15	
@@ -5916,11 +5925,170 @@
 2699 3406 3	2700 3405 2	Climb-down Ladder 16679						2	
 2699 3404 3	2700 3405 2	Climb-down Ladder 16679						2	
 									
+# Dragon Nest									
+1245 9527 0	1289 3136 0	Enter Cave 57592						2	
+1289 3136 0	1245 9527 0	Enter Cave 57591						2	
+									
 # Cam Torum									
 1435 3128 0	1439 9509 1	Pass-through Entrance 51375			Perilous Moons				
 1436 3128 0	1439 9509 1	Pass-through Entrance 51375			Perilous Moons				
 1439 9509 1	1435 3128 0	Pass-through Entrance 51375			Perilous Moons				
 1440 9509 1	1435 3128 0	Pass-through Entrance 51375			Perilous Moons				
+# Cam Torum squeeze-through doors (north-east guarded house remains inaccessible)									
+1403 9556 1	1403 9558 1	Squeeze-through Door 51005							
+1403 9558 1	1403 9556 1	Squeeze-through Door 51005							
+1403 9565 1	1403 9567 1	Squeeze-through Door 51005							
+1403 9567 1	1403 9565 1	Squeeze-through Door 51005							
+1414 9553 1	1416 9553 1	Squeeze-through Door 51005							
+1416 9553 1	1414 9553 1	Squeeze-through Door 51005							
+1414 9569 1	1416 9569 1	Squeeze-through Door 51005							
+1416 9569 1	1414 9569 1	Squeeze-through Door 51005							
+1426 9587 1	1426 9589 1	Squeeze-through Door 51005							
+1426 9589 1	1426 9587 1	Squeeze-through Door 51005							
+1430 9555 1	1432 9555 1	Squeeze-through Door 51005							
+1432 9555 1	1430 9555 1	Squeeze-through Door 51005							
+1430 9567 1	1432 9567 1	Squeeze-through Door 51005							
+1432 9567 1	1430 9567 1	Squeeze-through Door 51005							
+1447 9555 1	1449 9555 1	Squeeze-through Door 51005							
+1449 9555 1	1447 9555 1	Squeeze-through Door 51005							
+1448 9587 1	1448 9589 1	Squeeze-through Door 51005							
+1448 9589 1	1448 9587 1	Squeeze-through Door 51005							
+1463 9553 1	1465 9553 1	Squeeze-through Door 51005							
+1465 9553 1	1463 9553 1	Squeeze-through Door 51005							
+# Teumo's house: Final Dawn stage 29 sends the player inside to meet Servius.									
+1463 9569 1	1465 9569 1	Squeeze-through Door 56475				16663>28			
+1465 9569 1	1463 9569 1	Squeeze-through Door 56475							
+1478 9553 1	1480 9553 1	Squeeze-through Door 51005							
+1480 9553 1	1478 9553 1	Squeeze-through Door 51005							
+1478 9569 1	1480 9569 1	Squeeze-through Door 51005							
+1480 9569 1	1478 9569 1	Squeeze-through Door 51005							
+# Lost Pickaxe cellar									
+1429 9585 0	1431 9585 0	Squeeze-through Door 51005							
+1431 9585 0	1429 9585 0	Squeeze-through Door 51005							
+									
+# Neypotzli entrance - Perilous Moons stage 7 follows Jessamine granting entry									
+1439 9599 1	1440 9615 1	Pass-through Entrance 51375				9819>6			
+1440 9599 1	1440 9615 1	Pass-through Entrance 51375				9819>6			
+1439 9615 1	1439 9599 1	Pass-through Entrance 51377							
+1440 9615 1	1439 9599 1	Pass-through Entrance 51377							
+1441 9615 1	1439 9599 1	Pass-through Entrance 51377							
+# Ancient Prison - conservatively require the stage 10 campsite task on cavern entry									
+1421 9615 1	1388 9575 0	Pass-through Entrance 51376				9819>9			
+1422 9615 1	1388 9575 0	Pass-through Entrance 51376				9819>9			
+1423 9613 1	1388 9575 0	Pass-through Entrance 51376				9819>9			
+1423 9614 1	1388 9575 0	Pass-through Entrance 51376				9819>9			
+1423 9615 1	1388 9575 0	Pass-through Entrance 51376				9819>9			
+1388 9575 0	1423 9615 1	Pass-through Entrance 51375							
+1389 9575 0	1423 9615 1	Pass-through Entrance 51375							
+# Earthbound Cavern									
+1421 9649 1	1403 9717 0	Pass-through Entrance 51376				9819>9			
+1422 9649 1	1403 9717 0	Pass-through Entrance 51376				9819>9			
+1423 9649 1	1403 9717 0	Pass-through Entrance 51376				9819>9			
+1423 9650 1	1403 9717 0	Pass-through Entrance 51376				9819>9			
+1403 9716 0	1423 9649 1	Pass-through Entrance 51375							
+1403 9717 0	1423 9649 1	Pass-through Entrance 51375							
+# Streambound Cavern									
+1457 9649 1	1481 9669 0	Pass-through Entrance 51376				9819>9			
+1457 9650 1	1481 9669 0	Pass-through Entrance 51376				9819>9			
+1458 9649 1	1481 9669 0	Pass-through Entrance 51376				9819>9			
+1480 9669 0	1457 9649 1	Pass-through Entrance 51375							
+1481 9669 0	1457 9649 1	Pass-through Entrance 51375							
+									
+# Ancient Prison - Earthbound Cavern passage									
+1347 9590 0	1374 9667 0	Pass-through Entrance 51375							
+1347 9591 0	1374 9667 0	Pass-through Entrance 51375							
+1373 9667 0	1347 9590 0	Pass-through Entrance 51377							
+1374 9667 0	1347 9590 0	Pass-through Entrance 51377							
+1375 9667 0	1347 9590 0	Pass-through Entrance 51377							
+									
+# Streambound Cavern - Earthbound Cavern cave passage									
+1521 9719 0	1390 9676 0	Pass-through Entrance 51378							
+1522 9719 0	1390 9676 0	Pass-through Entrance 51378							
+1523 9719 0	1390 9676 0	Pass-through Entrance 51378							
+1389 9676 0	1522 9719 0	Pass-through Entrance 51378							
+1390 9676 0	1522 9719 0	Pass-through Entrance 51378							
+1391 9676 0	1522 9719 0	Pass-through Entrance 51378							
+# Streambound Cavern - Ancient Shrine passage									
+1526 9670 0	1513 9596 0	Pass-through Entrance 51377							
+1526 9671 0	1513 9596 0	Pass-through Entrance 51377							
+1526 9672 0	1513 9596 0	Pass-through Entrance 51377							
+1511 9597 0	1526 9671 0	Pass-through Entrance 51377							
+1512 9596 0	1526 9671 0	Pass-through Entrance 51377							
+1513 9596 0	1526 9671 0	Pass-through Entrance 51377							
+1514 9596 0	1526 9671 0	Pass-through Entrance 51377							
+1515 9597 0	1526 9671 0	Pass-through Entrance 51377							
+# Ancient Shrine - Ancient Prison passage									
+1511 9562 0	1355 9538 0	Pass-through Entrance 51377							
+1512 9563 0	1355 9538 0	Pass-through Entrance 51377							
+1513 9563 0	1355 9538 0	Pass-through Entrance 51377							
+1514 9563 0	1355 9538 0	Pass-through Entrance 51377							
+1515 9562 0	1355 9538 0	Pass-through Entrance 51377							
+1354 9538 0	1513 9563 0	Pass-through Entrance 51375							
+1355 9538 0	1513 9563 0	Pass-through Entrance 51375							
+1356 9538 0	1513 9563 0	Pass-through Entrance 51375							
+1357 9538 0	1513 9563 0	Pass-through Entrance 51375							
+									
+# Blue Moon lobby - conservatively require the stage 28 fight unlock on entry									
+1403 9703 0	1440 9653 0	Pass-through Entrance 51377				9819>27			
+1403 9704 0	1440 9653 0	Pass-through Entrance 51377				9819>27			
+1403 9705 0	1440 9653 0	Pass-through Entrance 51377				9819>27			
+1439 9653 0	1403 9704 0	Pass-through Entrance 51377							
+1440 9653 0	1403 9704 0	Pass-through Entrance 51377							
+1441 9653 0	1403 9704 0	Pass-through Entrance 51377							
+# Blue Moon statue - fights unlock at stage 28; require Blue Moon not yet subdued									
+1438 9659 0	1443 9681 0	Use Statue 51373				9819>27;9859=0			
+1438 9660 0	1443 9681 0	Use Statue 51373				9819>27;9859=0			
+1438 9661 0	1443 9681 0	Use Statue 51373				9819>27;9859=0			
+1439 9658 0	1443 9681 0	Use Statue 51373				9819>27;9859=0			
+1440 9658 0	1443 9681 0	Use Statue 51373				9819>27;9859=0			
+1441 9658 0	1443 9681 0	Use Statue 51373				9819>27;9859=0			
+1442 9659 0	1443 9681 0	Use Statue 51373				9819>27;9859=0			
+1442 9660 0	1443 9681 0	Use Statue 51373				9819>27;9859=0			
+1442 9661 0	1443 9681 0	Use Statue 51373				9819>27;9859=0			
+# Blue Moon quick escape to the antechamber									
+1438 9666 0	1441 9637 1	Quick-escape Stairs 53004							
+1439 9666 0	1441 9637 1	Quick-escape Stairs 53004							
+1440 9666 0	1441 9637 1	Quick-escape Stairs 53004							
+1441 9666 0	1441 9637 1	Quick-escape Stairs 53004							
+1442 9666 0	1441 9637 1	Quick-escape Stairs 53004							
+									
+# Blood Moon lobby - conservatively require the stage 28 fight unlock on entry									
+1387 9589 0	1418 9632 0	Pass-through Entrance 51375				9819>27			
+1387 9590 0	1418 9632 0	Pass-through Entrance 51375				9819>27			
+1387 9591 0	1418 9632 0	Pass-through Entrance 51375				9819>27			
+1387 9592 0	1418 9632 0	Pass-through Entrance 51375				9819>27			
+1418 9631 0	1387 9591 0	Pass-through Entrance 51377							
+1418 9632 0	1387 9591 0	Pass-through Entrance 51377							
+1418 9633 0	1387 9591 0	Pass-through Entrance 51377							
+# Blood Moon statue - fights unlock at stage 28; require Blood Moon not yet subdued									
+1410 9630 0	1390 9628 0	Use Statue 51372				9819>27;9858=0			
+1410 9634 0	1390 9628 0	Use Statue 51372				9819>27;9858=0			
+1411 9630 0	1390 9628 0	Use Statue 51372				9819>27;9858=0			
+1411 9634 0	1390 9628 0	Use Statue 51372				9819>27;9858=0			
+1412 9630 0	1390 9628 0	Use Statue 51372				9819>27;9858=0			
+1412 9634 0	1390 9628 0	Use Statue 51372				9819>27;9858=0			
+1413 9631 0	1390 9628 0	Use Statue 51372				9819>27;9858=0			
+1413 9632 0	1390 9628 0	Use Statue 51372				9819>27;9858=0			
+1413 9633 0	1390 9628 0	Use Statue 51372				9819>27;9858=0			
+# Blood Moon quick escape to the antechamber									
+1406 9631 0	1441 9637 1	Quick-escape Stairs 53003							
+1406 9632 0	1441 9637 1	Quick-escape Stairs 53003							
+1406 9633 0	1441 9637 1	Quick-escape Stairs 53003							
+									
+# Eclipse Moon statue - fights unlock at stage 28; require Eclipse Moon not yet subdued									
+1466 9631 0	1486 9628 0	Use Statue 51374				9819>27;9860=0			
+1466 9632 0	1486 9628 0	Use Statue 51374				9819>27;9860=0			
+1466 9633 0	1486 9628 0	Use Statue 51374				9819>27;9860=0			
+1467 9630 0	1486 9628 0	Use Statue 51374				9819>27;9860=0			
+1467 9634 0	1486 9628 0	Use Statue 51374				9819>27;9860=0			
+1468 9630 0	1486 9628 0	Use Statue 51374				9819>27;9860=0			
+1468 9634 0	1486 9628 0	Use Statue 51374				9819>27;9860=0			
+1469 9630 0	1486 9628 0	Use Statue 51374				9819>27;9860=0			
+1469 9634 0	1486 9628 0	Use Statue 51374				9819>27;9860=0			
+# Eclipse Moon quick escape to the antechamber									
+1474 9631 0	1441 9637 1	Quick-escape Stairs 53003							
+1474 9632 0	1441 9637 1	Quick-escape Stairs 53003							
+1474 9633 0	1441 9637 1	Quick-escape Stairs 53003							
 									
 # Observatory Tower & Dungeon									
 2457 3186 0	2355 9394 0	Climb-down Stairs 25432							

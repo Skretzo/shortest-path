@@ -5,7 +5,7 @@ import com.google.inject.Inject;
 import java.awt.*;
 import java.util.List;
 import net.runelite.api.Client;
-import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.gameval.*;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
 
@@ -16,6 +16,10 @@ import shortestpath.settings.Settings;
 
 public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 {
+	// The bank's own tabs are 0 to 9. BANK_CURRENTTAB holds a larger value while potion storage
+	// (RuneLite's PotionStorage.BANKTAB_POTIONSTORE, 15) covers the item area.
+	private static final int MAX_BANK_TAB = 9;
+
 	private final ItemManager itemManager;
 	// extraGatesPass() fetches the container; drawHighlights reads it in the
 	// same render pass, keeping the widget lookup once per frame.
@@ -49,6 +53,12 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 			return false;
 		}
 
+		// Outlines drawn on another panel's list would be misplaced
+		if (client.getVarbitValue(VarbitID.BANK_CURRENTTAB) > MAX_BANK_TAB)
+		{
+			return false;
+		}
+
 		return annotator.getDestinations("bank") != null;
 	}
 
@@ -75,6 +85,9 @@ public class BankItemHighlightOverlay extends AbstractHighlightOverlay
 		// drawHighlights, so the widget is non-null here (the gate returns
 		// false on a null/hidden container).
 		Color highlight = settings.get(ConfigKey.COLOUR_BANK_PICKUP_HIGHLIGHT);
+		// Items scrolled out of view keep their positions above or below the visible item area,
+		// so only that area is drawn on. RuneLite resets the clip after each overlay.
+		graphics.clip(bankContainer.getBounds());
 		drawItemOutlines(graphics, itemManager, bankContainer.getChildren(), pickup.bankItemIds,
 			highlight);
 

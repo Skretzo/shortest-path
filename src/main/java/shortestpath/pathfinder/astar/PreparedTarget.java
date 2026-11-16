@@ -76,8 +76,16 @@ public final class PreparedTarget
 	public AStarForwardSearch.Result search(int start, BooleanSupplier cancelled, double heuristicWeight,
 		SearchRestrictions restrictions, Runnable progressed, GoalTest goal)
 	{
+		return search(start, cancelled, heuristicWeight, restrictions, progressed, goal,
+			StartOverlay.none(overlay.routingStatic()));
+	}
+
+	/** As above, also walking the land {@code startOverlay} adds around the start. */
+	public AStarForwardSearch.Result search(int start, BooleanSupplier cancelled, double heuristicWeight,
+		SearchRestrictions restrictions, Runnable progressed, GoalTest goal, StartOverlay startOverlay)
+	{
 		return AStarForwardSearch.search(overlay, heuristic, start, cancelled, true, heuristicWeight,
-			restrictions, progressed, goal);
+			restrictions, progressed, goal, startOverlay);
 	}
 
 

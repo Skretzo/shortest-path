@@ -99,6 +99,7 @@ public interface ShortestPathConfig extends Config
 		position = 15,
 		section = sectionSettings
 	)
+	@Range(min = -1, max = 20000)
 	default int recalculateDistance()
 	{
 		return 10;
@@ -111,6 +112,7 @@ public interface ShortestPathConfig extends Config
 		position = 16,
 		section = sectionSettings
 	)
+	@Range(min = -1, max = 50)
 	default int reachedDistance()
 	{
 		return 5;
@@ -124,6 +126,7 @@ public interface ShortestPathConfig extends Config
 		position = 17,
 		section = sectionSettings
 	)
+	@Range(min = 0, max = 20000)
 	default int unreachableTargetDistance()
 	{
 		return 2;
@@ -149,6 +152,7 @@ public interface ShortestPathConfig extends Config
 		position = 19,
 		section = sectionSettings
 	)
+	@Range(min = 1, max = 30)
 	default int calculationCutoff()
 	{
 		return 5;
@@ -177,6 +181,7 @@ public interface ShortestPathConfig extends Config
 		position = 21,
 		section = sectionSettings
 	)
+	@Range(min = 100, max = 300)
 	default int aStarHeuristicWeight()
 	{
 		return 100;
@@ -277,6 +282,7 @@ public interface ShortestPathConfig extends Config
 		position = 28,
 		section = sectionSettings
 	)
+	@Range(min = 0, max = 10000)
 	default int costBankVisit()
 	{
 		return 0;

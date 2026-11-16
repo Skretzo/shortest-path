@@ -117,7 +117,7 @@ public final class RequirementContext
 		RoutingPolicy policy,
 		long evaluationTimeMinutes,
 		Collection<Transport> transports,
-		Map<Integer, DestinationRequirements> bankRequirements,
+		Map<Integer, List<DestinationRequirements>> bankRequirements,
 		ItemContainer bank,
 		Set<Unlock> unlocks,
 		boolean respawnPrifddinas,
@@ -170,16 +170,19 @@ public final class RequirementContext
 		// declares; they must land in the same snapshot, because a var or
 		// quest missing from these maps fails closed when the shared
 		// evaluator looks it up.
-		for (DestinationRequirements destinationRequirements : bankRequirements.values())
+		for (List<DestinationRequirements> tileRequirements : bankRequirements.values())
 		{
-			captureQuestStates(hooks, destinationRequirements.getQuests(), refreshedQuests, capturedQuestStates);
-			for (VarRequirement varRequirement : destinationRequirements.getVarbits())
+			for (DestinationRequirements destinationRequirements : tileRequirements)
 			{
-				capturedVarbitValues.put(varRequirement.getId(), source.varbit(varRequirement.getId()));
-			}
-			for (VarRequirement varRequirement : destinationRequirements.getVarPlayers())
-			{
-				capturedVarPlayerValues.put(varRequirement.getId(), source.varp(varRequirement.getId()));
+				captureQuestStates(hooks, destinationRequirements.getQuests(), refreshedQuests, capturedQuestStates);
+				for (VarRequirement varRequirement : destinationRequirements.getVarbits())
+				{
+					capturedVarbitValues.put(varRequirement.getId(), source.varbit(varRequirement.getId()));
+				}
+				for (VarRequirement varRequirement : destinationRequirements.getVarPlayers())
+				{
+					capturedVarPlayerValues.put(varRequirement.getId(), source.varp(varRequirement.getId()));
+				}
 			}
 		}
 

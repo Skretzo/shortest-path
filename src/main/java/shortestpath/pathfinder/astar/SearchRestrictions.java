@@ -90,13 +90,13 @@ public final class SearchRestrictions
 
 	/**
 	 * Whether a global teleport cast with {@code capability} may land on {@code destination}.
-	 * {@link TeleportCapability#ALL} means the cast happens outside the wilderness, so a
-	 * wilderness landing is barred while avoiding it; a cast from inside the wilderness
-	 * (any {@code OVER_*} capability) may land inside it, as in legacy.
+	 * A cast level of 0 ({@link TeleportCapability#ALL} or {@link TeleportCapability#POH}) means the
+	 * cast happens outside the wilderness, so a wilderness landing is barred while avoiding it; a cast
+	 * from inside the wilderness (any {@code OVER_*} capability) may land inside it, as in legacy.
 	 */
 	boolean globalAllowed(TeleportCapability capability, int destination)
 	{
-		return !avoidWilderness || capability != TeleportCapability.ALL
+		return !avoidWilderness || capability.castLevel() != 0
 			|| !WildernessChecker.isInWilderness(destination);
 	}
 }
