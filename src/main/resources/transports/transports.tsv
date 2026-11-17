@@ -3642,8 +3642,8 @@
 2721 5361 1	2720 5358 0	Climb-down Stairs 22940						1	
 2747 5374 0	3317 9603 0	Open Bone door 22945						1	
 2748 5374 0	3317 9603 0	Open Bone door 22945						1	
-3317 9602 0	2747 5374 0	Open Door 6919						1	
-3318 9602 0	2748 5374 0	Open Door 6919						1	
+3317 9602 0	2747 5374 0	Open Door 6919			Death to the Dorgeshuun			1	
+3318 9602 0	2748 5374 0	Open Door 6919			Death to the Dorgeshuun			1	
 2736 5352 0	2733 5351 1	Climb-up Stairs 22931						1	
 2736 5351 0	2733 5351 1	Climb-up Stairs 22931						1	
 2733 5351 1	2736 5351 0	Climb-down Stairs 22933						1	

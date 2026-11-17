@@ -1467,6 +1467,20 @@ public class ResourceLoaderTest
 		assertFloor("committed transports (incl. permutation products)", 15176, total);
 	}
 
+	@Test
+	public void dorgeshKaanEntranceRequiresDeathToTheDorgeshuun()
+	{
+		// The city requires quest completion: https://oldschool.runescape.wiki/w/Dorgesh-Kaan
+		HashMap<Integer, Set<Transport>> all = ResourceLoader.transports();
+		for (int x : new int[]{3317, 3318})
+		{
+			Set<Transport> entrance = all.get(WorldPointUtil.packWorldPoint(x, 9602, 0));
+			Assert.assertNotNull("Both entrance tiles have transport rows", entrance);
+			Assert.assertEquals(1, entrance.size());
+			Assert.assertEquals(Set.of(Quest.DEATH_TO_THE_DORGESHUUN), getFirstTransport(entrance).getQuests());
+		}
+	}
+
 	// ------------------------------------------------------------------
 	// Collision map — caller-owned stream; the zip walk's failure posture
 	// stays with the caller.
