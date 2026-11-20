@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import net.runelite.api.CameraFocusableEntity;
@@ -52,6 +53,7 @@ import shortestpath.TestShortestPathConfig;
 import shortestpath.WorldPointUtil;
 import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.BankPickupAnalysis;
+import shortestpath.pathfinder.BankVisitState;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.PathfinderResult;
 import shortestpath.pathfinder.Targets;
@@ -658,9 +660,71 @@ public class OverlayTranscriptTest
 		check("highlight-bank-off", injector.getInstance(BankItemHighlightOverlay.class));
 	}
 
+	private void renderBankHighlight(List<PathStep> path, Set<Integer> bankTiles)
+	{
+		when(search.getPath()).thenReturn(path);
+		BankPickupRequirements.BankPickupResult pickup = BankPickupRequirements.BankPickupResult.format(
+			client, new BankPickupAnalysis(List.of(List.of(Map.of(4151, 1L))), Set.of(4151)));
+		when(annotator.getBankPickup(any(), anyInt(), any())).thenReturn(pickup);
+		when(annotator.isBankOpen()).thenReturn(true);
+		when(annotator.getDestinations(eq("bank"))).thenReturn(bankTiles);
+		Widget bank = mock(Widget.class);
+		when(bank.isHidden()).thenReturn(false);
+		when(bank.getChildren()).thenReturn(new Widget[0]);
+		widgets.put(InterfaceID.Bankmain.ITEMS, bank);
+
+		injector.getInstance(BankItemHighlightOverlay.class).render(new RecordingGraphics2D(
+			new BufferedImage(800, 600, BufferedImage.TYPE_INT_ARGB).createGraphics(), new ArrayList<>()));
+	}
+
+	private static PathStep step(int x, int y, BankVisitState state)
+	{
+		return new PathStep(packed(x, y), state);
+	}
+
+	@Test
+	public void highlightBankFindsTheRoutesBankStepWhereverThePlayerStands()
+	{
+		// The route banks at its third tile (the first banked step), two tiles from where the player stands
+		List<PathStep> path = List.of(step(BASE + 20, BASE + 20, BankVisitState.CARRIED),
+			step(BASE + 21, BASE + 20, BankVisitState.CARRIED),
+			step(BASE + 22, BASE + 20, BankVisitState.BANKED),
+			step(BASE + 35, BASE + 22, BankVisitState.BANKED),
+			step(BASE + 36, BASE + 22, BankVisitState.BANKED));
+		renderBankHighlight(path, Set.of(packed(BASE + 22, BASE + 20)));
+
+		verify(annotator).getBankPickup(any(), eq(2), any());
+	}
+
+	@Test
+	public void highlightBankSkipsAnEarlierBankTileTheRouteDoesNotBankAt()
+	{
+		// The route walks over a bank tile still carrying its items, then banks at a later one: the
+		// step before the switch and the first banked step share that tile
+		List<PathStep> path = List.of(step(BASE + 20, BASE + 20, BankVisitState.CARRIED),
+			step(BASE + 21, BASE + 20, BankVisitState.CARRIED),
+			step(BASE + 22, BASE + 20, BankVisitState.CARRIED),
+			step(BASE + 22, BASE + 20, BankVisitState.BANKED),
+			step(BASE + 35, BASE + 22, BankVisitState.BANKED));
+		renderBankHighlight(path, Set.of(packed(BASE + 20, BASE + 20), packed(BASE + 22, BASE + 20)));
+
+		verify(annotator).getBankPickup(any(), eq(2), any());
+	}
+
+	@Test
+	public void highlightBankIgnoresARouteWithBankTilesButNoBankedLayer()
+	{
+		renderBankHighlight(defaultPath(), Set.of(packed(BASE + 22, BASE + 20)));
+
+		verify(annotator, org.mockito.Mockito.never()).getBankPickup(any(), anyInt(), any());
+	}
+
 	@Test
 	public void highlightBankOn()
 	{
+		// The route banks at its first tile, so every step carries the banked state
+		when(search.getPath()).thenReturn(List.of(step(BASE + 20, BASE + 20, BankVisitState.BANKED),
+			step(BASE + 21, BASE + 20, BankVisitState.BANKED), step(BASE + 22, BASE + 20, BankVisitState.BANKED)));
 		BankPickupRequirements.BankPickupResult pickup = BankPickupRequirements.BankPickupResult.format(
 			client, new BankPickupAnalysis(List.of(List.of(Map.of(4151, 1L))), Set.of(4151)));
 		when(annotator.getBankPickup(any(), anyInt(), any())).thenReturn(pickup);
