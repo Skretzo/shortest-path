@@ -5,12 +5,13 @@ import javax.inject.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.GameState;
+import net.runelite.api.gameval.InterfaceID;
 import shortestpath.settings.*;
 import shortestpath.WorldPointUtil;
 import shortestpath.items.ItemChange;
 import shortestpath.pathfinder.*;
 import shortestpath.pathfinder.sailing.SailingPathfinder;
-import shortestpath.poh.PohChange;
+import shortestpath.poh.*;
 import shortestpath.sailing.SailingChange;
 import shortestpath.spirittree.TreeChange;
 
@@ -21,7 +22,8 @@ import shortestpath.spirittree.TreeChange;
  * invokes are package-private so the rule is compiler-enforced. The
  * coordinator holds no lock; every channel runs on the client thread where the
  * shell's event handlers ran before it, and the only state it carries is the
- * game-state transition memory that moved with the login gate.
+ * game-state transition memory that moved with the login gate and the open
+ * item panels, whose item re-plans it queues for the next tick.
  */
 @Slf4j
 @Singleton
@@ -47,8 +49,23 @@ public class RefreshCoordinator
 		"dialog", "nexus dialog",
 		"dialogLine", "nexus dialog line");
 
+	/**
+	 * While one of these is open, any item change re-plans the route on the next tick, since the
+	 * route may rely on items that were put away or could use ones taken out. Opening one re-plans
+	 * too, since that is when its contents become known.
+	 */
+	private static final Set<Integer> ITEM_PANELS = Set.of(InterfaceID.BANKMAIN, InterfaceID.BANK_DEPOSITBOX,
+		InterfaceID.SHARED_BANK, InterfaceID.SHOPMAIN, InterfaceID.GE_OFFERS, InterfaceID.GE_COLLECT);
+
+	private static final int POH_LANDING = WorldPointUtil.packWorldPoint(PohService.POH_LANDING_X, PohService.POH_LANDING_Y, 0);
+
 	private final PathScheduler scheduler;
 	private final Settings settings;
+
+	private final Set<Integer> openItemPanels = new HashSet<>();
+	// Item re-plans wait for the next tick, which knows where the player stands and folds the
+	// changes of one tick into a single restart
+	private boolean itemReplanPending = false;
 
 	// The login transition memory for gameStateChanged's three-state gate.
 	private GameState lastGameState = null;
@@ -57,14 +74,41 @@ public class RefreshCoordinator
 	/**
 	 * Maps an item-state change fact to its follow-up actions: the declared
 	 * {@link Effect#ELIGIBILITY_STALE} effect lazily rebuilds the eligibility
-	 * snapshot. {@code null} facts admit nothing and map to no action.
+	 * snapshot, and any item change while an item panel is open queues a re-plan
+	 * for the next tick. {@code null} facts admit nothing and map to no action.
 	 */
 	public void itemsChanged(ItemChange change)
 	{
-		if (change != null && change.getEffects().contains(Effect.ELIGIBILITY_STALE))
+		if (change == null)
+		{
+			return;
+		}
+		if (change.getEffects().contains(Effect.ELIGIBILITY_STALE))
 		{
 			scheduler.invalidateEligibility();
 		}
+		if (!openItemPanels.isEmpty() && scheduler.getActiveSearch() != null)
+		{
+			itemReplanPending = true;
+		}
+	}
+
+	/**
+	 * Tracks open item panels. Opening any of them also re-plans the route, since that's when its
+	 * contents become known.
+	 */
+	public void widgetLoaded(int groupId)
+	{
+		if (ITEM_PANELS.contains(groupId))
+		{
+			openItemPanels.add(groupId);
+			itemReplanPending |= scheduler.getActiveSearch() != null;
+		}
+	}
+
+	public void widgetClosed(int groupId)
+	{
+		openItemPanels.remove(groupId);
 	}
 
 	/**
@@ -187,6 +231,14 @@ public class RefreshCoordinator
 	 */
 	public void gameStateChanged(GameState state, int tick)
 	{
+		// Panels can close without a closed event when the client logs out or hops, so start over
+		if (GameState.LOGIN_SCREEN.equals(state) || GameState.HOPPING.equals(state)
+			|| GameState.CONNECTION_LOST.equals(state))
+		{
+			openItemPanels.clear();
+			itemReplanPending = false;
+		}
+
 		GameState previousGameState = lastGameState;
 		GameState previousPreviousGameState = lastLastGameState;
 		lastLastGameState = lastGameState;
@@ -217,11 +269,16 @@ public class RefreshCoordinator
 	 * The tick's off-route decision: when the player reaches a target tile the
 	 * path is cleared, and when the player strays too far from the displayed
 	 * route the search either clears or restarts from the current position,
-	 * per config. With no running search there is nothing to guard — the shell
-	 * already declined the tick, and the re-read below keeps that no-op exact.
+	 * per config. A player inside the house counts as standing on its landing
+	 * tile for the off-route decision and for every restart start. It also runs
+	 * the item re-plans queued since the last tick. With no running search there
+	 * is nothing to guard — the shell already declined the tick, and the re-read
+	 * below keeps that no-op exact.
 	 */
 	public void offRouteTick(int tick, int currentLocation, int boatLocation, int boatHeading)
 	{
+		boolean itemReplan = itemReplanPending;
+		itemReplanPending = false;
 		ActiveSearch pathfinder = scheduler.getActiveSearch();
 		if (pathfinder == null)
 		{
@@ -249,14 +306,29 @@ public class RefreshCoordinator
 			}
 		}
 
-		if (!scheduler.isStartPointSet() && !scheduler.isNearPath(currentLocation))
+		// Routes model the whole house as its landing tile, so inside the house the player counts as
+		// standing there: arriving by tablet is on the route, and a re-plan never starts from a house
+		// tile that would send the search back through the house
+		int location = PohService.isInsidePoh(WorldPointUtil.unpackWorldX(currentLocation),
+			WorldPointUtil.unpackWorldY(currentLocation)) ? POH_LANDING : currentLocation;
+
+		if (itemReplan)
+		{
+			// From where the player stands, like an off-route restart: they walked to the panel
+			// after the route was planned
+			int start = scheduler.isStartPointSet() ? pathfinder.getStart() : location;
+			scheduler.restart("items changed", start, pathfinder.getTargets());
+			return;
+		}
+
+		if (!scheduler.isStartPointSet() && !scheduler.isNearPath(location))
 		{
 			if (settings.bool(ConfigKey.CANCEL_INSTEAD))
 			{
 				scheduler.setTarget(WorldPointUtil.UNDEFINED);
 				return;
 			}
-			scheduler.restart("off route", currentLocation, pathfinder.getTargets());
+			scheduler.restart("off route", location, pathfinder.getTargets());
 		}
 	}
 
