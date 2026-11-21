@@ -8,6 +8,8 @@ Inventory and Bank/consumable | check=NONE | carried=true | banked=true | gates=
 Inventory and Bank/permanent | check=NONE | carried=true | banked=true | gates=NONE
 Inventory and Bank (perm)/consumable | check=TELEPORT_MODE | carried=false | banked=false | gates=TELEPORT_MODE
 Inventory and Bank (perm)/permanent | check=NONE | carried=true | banked=true | gates=NONE
+Inventory (all) and bank (perm)/consumable | check=NONE | carried=true | banked=true | gates=NONE
+Inventory (all) and bank (perm)/permanent | check=NONE | carried=true | banked=true | gates=NONE
 Unlocked/consumable | check=NONE | carried=true | banked=true | gates=NONE
 Unlocked/permanent | check=NONE | carried=true | banked=true | gates=NONE
 Unlocked (perm)/consumable | check=TELEPORT_MODE | carried=false | banked=false | gates=TELEPORT_MODE

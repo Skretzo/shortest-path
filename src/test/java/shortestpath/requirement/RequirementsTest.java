@@ -645,6 +645,7 @@ public class RequirementsTest
 		expected.put(TeleportationItem.INVENTORY_NON_CONSUMABLE, RejectionReason.TELEPORT_MODE);
 		expected.put(TeleportationItem.INVENTORY_AND_BANK, RejectionReason.NONE);
 		expected.put(TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE, RejectionReason.TELEPORT_MODE);
+		expected.put(TeleportationItem.INVENTORY_ALL_AND_BANK_NON_CONSUMABLE, RejectionReason.NONE);
 		expected.put(TeleportationItem.UNLOCKED, RejectionReason.NONE);
 		expected.put(TeleportationItem.UNLOCKED_NON_CONSUMABLE, RejectionReason.TELEPORT_MODE);
 		expected.put(TeleportationItem.ALL, RejectionReason.NONE);
@@ -679,6 +680,7 @@ public class RequirementsTest
 		expected.put(TeleportationItem.INVENTORY_NON_CONSUMABLE, RejectionReason.NONE);
 		expected.put(TeleportationItem.INVENTORY_AND_BANK, RejectionReason.NONE);
 		expected.put(TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE, RejectionReason.NONE);
+		expected.put(TeleportationItem.INVENTORY_ALL_AND_BANK_NON_CONSUMABLE, RejectionReason.NONE);
 		expected.put(TeleportationItem.UNLOCKED, RejectionReason.NONE);
 		expected.put(TeleportationItem.UNLOCKED_NON_CONSUMABLE, RejectionReason.NONE);
 		expected.put(TeleportationItem.ALL, RejectionReason.NONE);
