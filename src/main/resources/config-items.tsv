@@ -53,6 +53,9 @@ pohJewelleryBoxTier	POH Jewellery Box Tier	The tier of jewellery box built in yo
 pohMountedItems	POH Mounted Items	Select the mounted POH items available in your house		
 usePohMountedItems				
 usePohObelisk	POH Wilderness Obelisk	Whether to include the POH wilderness obelisk in the path.<br>Enable this if you have built an obelisk in your house (80 Construction or boosted)		
+detectPohSettings	Auto Detect House	Read the house you are in: your own house fills in this character's<br>house settings each time you enter it (and its Portal Nexus list when<br>you open the nexus); in someone else's house, with Enable POH Teleports<br>on, the route uses what is built there until you leave. Turn off to set everything by hand.		
+detectPohKeepExtra	Keep Teleports Not In Your House	When your house is read, only add what it has: anything already ticked<br>that your house lacks stays ticked and is routed as if your house had it.<br>Off: the settings match your house exactly.		
+highlightPohObject	Highlight House Teleport	In your house, outline the teleport the route uses next<br>(the jewellery box, nexus, portal, fairy ring and so on).		
 costAgilityShortcuts	Agility Shortcut Threshold	How many extra tiles an agility shortcut must save<br>to be preferred over walking or other transports	0	10000
 costGrappleShortcuts	Grapple Shortcut Threshold	How many extra tiles a grapple shortcut must save<br>to be preferred over walking or other transports	0	10000
 costBoats	Boat Threshold	How many extra tiles a small boat must save<br>to be preferred over walking or other transports	0	10000

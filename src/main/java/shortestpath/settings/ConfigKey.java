@@ -78,6 +78,9 @@ public enum ConfigKey
 	POH_MOUNTED_ITEMS,
 	USE_POH_MOUNTED_ITEMS,
 	USE_POH_OBELISK,
+	DETECT_POH_SETTINGS,
+	DETECT_POH_KEEP_EXTRA,
+	HIGHLIGHT_POH_OBJECT,
 	COST_AGILITY_SHORTCUTS,
 	COST_GRAPPLE_SHORTCUTS,
 	COST_BOATS,
@@ -121,6 +124,7 @@ public enum ConfigKey
 	DRAW_TRANSPORTS,
 	DRAW_COLLISION_MAP,
 	DRAW_DEBUG_PANEL,
+	DRAW_POH_OBJECTS,
 	POST_TRANSPORTS,
 	UNREACHABLE_TEXT,
 	BUILT_TELEPORTATION_BOXES,
@@ -189,12 +193,45 @@ public enum ConfigKey
 		return Rows.NAMES.containsKey(key) ? valueOf(Rows.NAMES.get(key)) : null;
 	}
 
+	/**
+	 * Whether the key describes one character's house. Such a key is stored
+	 * per RuneScape profile while logged in; a character that has not stored
+	 * it yet reads the shared value.
+	 */
+	public boolean isPerCharacter()
+	{
+		return PerCharacter.KEYS.contains(this);
+	}
+
+	/** The keys {@link #isPerCharacter} answers true for. */
+	public static Set<ConfigKey> perCharacterKeys()
+	{
+		return PerCharacter.KEYS;
+	}
+
 	/** The value stored for this key, or null when it was never written or does not parse. */
 	Object read(ConfigManager configManager)
 	{
+		Object own = readOwn(configManager);
+		if (own != null)
+		{
+			return own;
+		}
 		return type == Set.class
 			? parseSet(configManager.getConfiguration(Settings.CONFIG_GROUP, key), element)
 			: configManager.getConfiguration(Settings.CONFIG_GROUP, key, type);
+	}
+
+	/** The logged-in character's own value for a per-character key, or null. */
+	Object readOwn(ConfigManager configManager)
+	{
+		if (!isPerCharacter())
+		{
+			return null;
+		}
+		return type == Set.class
+			? parseSet(configManager.getRSProfileConfiguration(Settings.CONFIG_GROUP, key), element)
+			: configManager.getRSProfileConfiguration(Settings.CONFIG_GROUP, key, type);
 	}
 
 	/** {@code value} if it has this key's type (enum keys also take their display name), otherwise null. */
@@ -257,6 +294,19 @@ public enum ConfigKey
 			return null;
 		}
 		return out;
+	}
+
+	/** Held apart so the set is built after every constant exists. */
+	private static final class PerCharacter
+	{
+		private static final Set<ConfigKey> KEYS = Collections.unmodifiableSet(EnumSet.of(
+			USE_POH,
+			USE_POH_FAIRY_RING,
+			USE_POH_SPIRIT_TREE,
+			USE_POH_OBELISK,
+			POH_JEWELLERY_BOX_TIER,
+			POH_NEXUS_PORTALS,
+			POH_MOUNTED_ITEMS));
 	}
 
 	private static final class Rows

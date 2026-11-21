@@ -615,6 +615,18 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "drawPohObjects",
+		name = "Show House Teleports",
+		description = "In a house, outline every teleport object the house detection found, with its name",
+		position = 207,
+		section = sectionDebug
+	)
+	default boolean drawPohObjects()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "drawClickPoints",
 		name = "Show Click Points",
 		description = "Highlight route click points in magenta in the game view",

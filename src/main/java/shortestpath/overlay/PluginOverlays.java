@@ -3,7 +3,7 @@ package shortestpath.overlay;
 import net.runelite.client.ui.overlay.OverlayManager;
 
 /**
- * The plugin's overlay set as one composite: the shell keeps the nine
+ * The plugin's overlay set as one composite: the shell keeps the eleven
  * overlay references injected but delegates every lifecycle call here, so
  * the add/remove/debug-toggle idioms each have a single owner. Register
  * order is render order, so the field order below mirrors the order the
@@ -22,6 +22,8 @@ public final class PluginOverlays
 	private final InventoryHighlightOverlay inventoryHighlightOverlay;
 	private final ScrollBookHighlightOverlay scrollBookHighlightOverlay;
 	private final DebugOverlayPanel debugOverlayPanel;
+	private final HouseObjectOverlay houseObjectOverlay;
+	private final HouseMenuHighlightOverlay houseMenuHighlightOverlay;
 
 	public PluginOverlays(
 		PathTileOverlay pathOverlay,
@@ -32,7 +34,9 @@ public final class PluginOverlays
 		SpellbookHighlightOverlay spellbookHighlightOverlay,
 		InventoryHighlightOverlay inventoryHighlightOverlay,
 		ScrollBookHighlightOverlay scrollBookHighlightOverlay,
-		DebugOverlayPanel debugOverlayPanel)
+		DebugOverlayPanel debugOverlayPanel,
+		HouseObjectOverlay houseObjectOverlay,
+		HouseMenuHighlightOverlay houseMenuHighlightOverlay)
 	{
 		this.pathOverlay = pathOverlay;
 		this.pathMinimapOverlay = pathMinimapOverlay;
@@ -43,6 +47,8 @@ public final class PluginOverlays
 		this.inventoryHighlightOverlay = inventoryHighlightOverlay;
 		this.scrollBookHighlightOverlay = scrollBookHighlightOverlay;
 		this.debugOverlayPanel = debugOverlayPanel;
+		this.houseObjectOverlay = houseObjectOverlay;
+		this.houseMenuHighlightOverlay = houseMenuHighlightOverlay;
 	}
 
 	/**
@@ -60,6 +66,8 @@ public final class PluginOverlays
 		overlayManager.add(spellbookHighlightOverlay);
 		overlayManager.add(inventoryHighlightOverlay);
 		overlayManager.add(scrollBookHighlightOverlay);
+		overlayManager.add(houseObjectOverlay);
+		overlayManager.add(houseMenuHighlightOverlay);
 		if (drawDebug)
 		{
 			overlayManager.add(debugOverlayPanel);
@@ -67,7 +75,7 @@ public final class PluginOverlays
 	}
 
 	/**
-	 * Removes all nine overlays unconditionally, matching the plugin's
+	 * Removes all eleven overlays unconditionally, matching the plugin's
 	 * shut-down semantics — a never-registered debug panel removes as a
 	 * no-op.
 	 */
@@ -81,6 +89,8 @@ public final class PluginOverlays
 		overlayManager.remove(spellbookHighlightOverlay);
 		overlayManager.remove(inventoryHighlightOverlay);
 		overlayManager.remove(scrollBookHighlightOverlay);
+		overlayManager.remove(houseObjectOverlay);
+		overlayManager.remove(houseMenuHighlightOverlay);
 		overlayManager.remove(debugOverlayPanel);
 	}
 

@@ -88,8 +88,14 @@ public class PathAnnotatorTest
 			new PathStep(inside1, BankVisitState.CARRIED),
 			new PathStep(inside2, BankVisitState.CARRIED),
 			new PathStep(outside, BankVisitState.CARRIED, portal));
-		assertEquals("Nexus: Lumbridge Portal",
+		assertEquals("Open Portal Nexus: Lumbridge Portal",
 			annotator.getPohExitInfo(LANDING, path, 0));
+		// A house with Lumbridge in its portal chamber is told to enter that portal instead.
+		pohService.setChamberPortals(java.util.EnumSet.of(shortestpath.poh.PohNexusPortal.LUMBRIDGE));
+		assertEquals("Enter Portal: Lumbridge Portal", annotator.getPohExitInfo(LANDING, path, 0));
+		pohService.putFromDialogLine("4 : Lumbridge");
+		assertEquals("Enter Portal: Lumbridge Portal", annotator.getPohExitInfo(LANDING, path, 0));
+		pohService.setChamberPortals(null);
 
 		Transport glory = transport(TransportType.TELEPORTATION_BOX, "Edgeville", "Mounted Amulet of Glory", 0);
 		List<PathStep> gloryPath = List.of(
@@ -128,7 +134,7 @@ public class PathAnnotatorTest
 		List<PathStep> path = List.of(
 			new PathStep(LANDING, BankVisitState.CARRIED),
 			new PathStep(outside, BankVisitState.CARRIED, portal));
-		assertEquals("Nexus: Lumbridge Portal",
+		assertEquals("Open Portal Nexus: Lumbridge Portal",
 			annotator.getPohExitInfo(LANDING, path, -1));
 	}
 
@@ -184,7 +190,7 @@ public class PathAnnotatorTest
 	@Test
 	public void exitPrefixTablePinsEveryTypeAndThePassthrough()
 	{
-		assertEquals("Nexus: ",
+		assertEquals("Open Portal Nexus: ",
 			PathAnnotator.EXIT_PREFIX.get(TransportType.TELEPORTATION_PORTAL_POH));
 		// The missing colon is upstream display text, not a typo — pinned
 		// literally so it cannot be normalized to "Fairy Ring: ".

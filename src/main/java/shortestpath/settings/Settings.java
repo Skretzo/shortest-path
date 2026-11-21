@@ -38,6 +38,8 @@ public class Settings
 	/** The overrides as received, unknown keys included, so they can be echoed back. */
 	@Getter
 	private volatile Map<String, Object> overrides = Map.of();
+	/** Another player's house the player stands in, for routing; empty in one's own or outside. */
+	private volatile Map<ConfigKey, Object> visitedHouse = Map.of();
 	private final Map<String, List<Runnable>> listeners = new ConcurrentHashMap<>();
 	private final Map<String, Thread> writeInFlight = new ConcurrentHashMap<>();
 
@@ -81,7 +83,35 @@ public class Settings
 	public <T> T get(ConfigKey key)
 	{
 		Object value = key.coerce(overrides.get(key.getKey()));
+		if (value == null)
+		{
+			value = visitedHouse.get(key);
+		}
 		return (T) (value != null ? value : storedOrDefault(key, true));
+	}
+
+	/**
+	 * Routes with another player's house while the player stands in it:
+	 * {@code values} replaces the per-character house keys for routing only
+	 * ({@link #configured} and stored values are untouched); an empty map
+	 * goes back to the player's own. Returns the change to hand the refresh
+	 * coordinator, or null when nothing changed.
+	 */
+	public ConfigChange visitHouse(Map<ConfigKey, Object> values)
+	{
+		Map<ConfigKey, Object> next = Map.copyOf(values);
+		if (next.equals(visitedHouse))
+		{
+			return null;
+		}
+		visitedHouse = next;
+		return new ConfigChange("visited house", EnumSet.of(Effect.ROUTE_INVALIDATING));
+	}
+
+	/** Whether routing uses another player's house just now. */
+	public boolean isVisitingHouse()
+	{
+		return !visitedHouse.isEmpty();
 	}
 
 	public boolean bool(ConfigKey key)
@@ -162,7 +192,7 @@ public class Settings
 		writeInFlight.put(key, Thread.currentThread());
 		try
 		{
-			configManager.setConfiguration(CONFIG_GROUP, key, value);
+			store(key, value);
 			cache.clear();
 			fireListeners(key);
 		}
@@ -170,6 +200,61 @@ public class Settings
 		{
 			writeInFlight.remove(key);
 		}
+	}
+
+	/**
+	 * Stores what the game showed for one character's house. Unlike
+	 * {@link #write}, the listeners run on the Swing thread through the
+	 * {@link ConfigChanged} echo, so this may be called from the client
+	 * thread. Nothing is written when logged out or when the character
+	 * already stores that value; returns whether it wrote.
+	 */
+	public boolean writeForCharacter(ConfigKey key, Object value)
+	{
+		if (configManager == null || !key.isPerCharacter() || Objects.equals(key.readOwn(configManager), value))
+		{
+			return false;
+		}
+		// RuneLite makes the character's profile on its first write while logged in; logged out it writes nothing.
+		configManager.setRSProfileConfiguration(CONFIG_GROUP, key.getKey(), value);
+		cache.clear();
+		return configManager.getRSProfileKey() != null;
+	}
+
+	/**
+	 * The logged-in character changed, so every per-character key may read a
+	 * different value. Drops cached reads and refreshes the controls showing
+	 * those keys; the returned change carries the routing effect.
+	 */
+	public ConfigChange characterChanged()
+	{
+		cache.clear();
+		Set<Effect> effects = EnumSet.noneOf(Effect.class);
+		for (ConfigKey key : ConfigKey.perCharacterKeys())
+		{
+			effects.addAll(key.getEffects());
+			if (listeners.containsKey(key.getKey()))
+			{
+				SwingUtilities.invokeLater(() -> fireListeners(key.getKey()));
+			}
+		}
+		return new ConfigChange("character", effects);
+	}
+
+	/** Per-character keys go to the logged-in character when there is one. */
+	private void store(String key, Object value)
+	{
+		ConfigKey row = ConfigKey.forKey(key);
+		if (row != null && row.isPerCharacter())
+		{
+			// Makes the character's profile if it has none yet; does nothing while logged out.
+			configManager.setRSProfileConfiguration(CONFIG_GROUP, key, value);
+			if (configManager.getRSProfileKey() != null)
+			{
+				return;
+			}
+		}
+		configManager.setConfiguration(CONFIG_GROUP, key, value);
 	}
 
 	/** Runs {@code listener} whenever {@code key} changes; the returned runnable unregisters it. */

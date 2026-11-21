@@ -3,6 +3,7 @@ package shortestpath;
 import com.google.inject.*;
 import java.awt.event.KeyEvent;
 import java.util.Set;
+import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
@@ -23,7 +24,10 @@ import net.runelite.client.util.ImageUtil;
 import shortestpath.api.*;
 import shortestpath.items.ItemStateService;
 import shortestpath.overlay.*;
+import shortestpath.pathfinder.ActiveSearch;
 import shortestpath.pathfinder.PathfinderConfig;
+import shortestpath.poh.HouseDebug;
+import shortestpath.poh.PohDetector;
 import shortestpath.poh.PohService;
 import shortestpath.presentation.PathAnnotator;
 import shortestpath.sailing.SailingService;
@@ -72,9 +76,17 @@ public class ShortestPathPlugin extends Plugin
 	@Inject
 	private DebugOverlayPanel debugOverlayPanel;
 	@Inject
+	private HouseObjectOverlay houseObjectOverlay;
+	@Inject
+	private HouseRouteProgress houseProgress;
+	@Inject
+	private HouseMenuHighlightOverlay houseMenuHighlightOverlay;
+	@Inject
 	private KeyManager keyManager;
 	@Inject
 	private PohService pohService;
+	@Inject
+	private PohDetector pohDetector;
 	@Inject
 	private SpiritTreeService spiritTrees;
 	@Inject
@@ -107,6 +119,8 @@ public class ShortestPathPlugin extends Plugin
 	@Inject
 	private EventBus eventBus;
 	private ShortestPathPanel panel;
+	/** The House Debug text last handed to the sidebar. */
+	private String lastHouseDebug;
 	private NavigationButton navButton;
 	private PathfinderConfig pathfinderConfig;
 	// Built in startUp — the overlay references it bundles are @Inject
@@ -175,7 +189,8 @@ public class ShortestPathPlugin extends Plugin
 
 		pluginOverlays = new PluginOverlays(pathOverlay, pathMinimapOverlay,
 			pathMapOverlay, pathMapTooltipOverlay, bankItemHighlightOverlay,
-			spellbookHighlightOverlay, inventoryHighlightOverlay, scrollBookHighlightOverlay, debugOverlayPanel);
+			spellbookHighlightOverlay, inventoryHighlightOverlay, scrollBookHighlightOverlay, debugOverlayPanel,
+			houseObjectOverlay, houseMenuHighlightOverlay);
 		pluginOverlays.register(overlayManager, settings.bool(ConfigKey.DRAW_DEBUG_PANEL));
 
 		keyManager.registerKeyListener(clearPathKeylistener);
@@ -230,6 +245,8 @@ public class ShortestPathPlugin extends Plugin
 		// The singleton survives restarts; drop the live bank ref so session
 		// state cannot leak into the next enable.
 		itemState.reset();
+		pohDetector.reset();
+		houseProgress.reset();
 		// Same lifetime for the sailing snapshot — a stale aboard flag must
 		// not greet the next session before its first refresh publishes.
 		sailing.reset();
@@ -318,7 +335,49 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
+		pohDetector.gameStateChanged(event.getGameState());
+		// No tick runs on the login screen, so a logout or hop clears the sidebar's house report here.
+		pushHouseDebug();
 		coordinator.gameStateChanged(event.getGameState(), client.getTickCount());
+	}
+
+	@Subscribe
+	public void onMenuOptionClicked(MenuOptionClicked event)
+	{
+		pohDetector.menuClicked(event);
+	}
+
+	@Subscribe
+	public void onChatMessage(ChatMessage event)
+	{
+		if (event.getType() == ChatMessageType.GAMEMESSAGE)
+		{
+			pohDetector.gameMessage(event.getMessage());
+		}
+	}
+
+	@Subscribe
+	public void onGameObjectSpawned(GameObjectSpawned event)
+	{
+		pohDetector.objectSpawned(event.getGameObject().getId());
+	}
+
+	@Subscribe
+	public void onWallObjectSpawned(WallObjectSpawned event)
+	{
+		pohDetector.objectSpawned(event.getWallObject().getId());
+	}
+
+	@Subscribe
+	public void onDecorativeObjectSpawned(DecorativeObjectSpawned event)
+	{
+		pohDetector.objectSpawned(event.getDecorativeObject().getId());
+	}
+
+	@Subscribe
+	public void onGroundObjectSpawned(GroundObjectSpawned event)
+	{
+		pohDetector.objectSpawned(event.getGroundObject().getId());
 	}
 
 	/**
@@ -340,6 +399,14 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onRuneScapeProfileChanged(RuneScapeProfileChanged event)
 	{
+		// A sidebar write can make the character's profile, which posts this event on the
+		// Swing thread; the loads below touch client-thread state, so they run there.
+		// invoke() runs at once when already on the client thread.
+		clientThread.invoke(() -> profileChanged(event.getPreviousProfile()));
+	}
+
+	private void profileChanged(String previousProfile)
+	{
 		pohService.loadFromProfile();
 		// The new profile may carry different persisted trees, so an in-flight
 		// path computed against the old account's set must be redone — the
@@ -348,6 +415,15 @@ public class ShortestPathPlugin extends Plugin
 		// The last-seen bank snapshot is scoped per account — the new
 		// profile's record replaces the previous account's.
 		itemState.loadFromProfile();
+		// The house settings are kept per character too. A first write makes the current
+		// character's profile (no previous one); that is the same character, so its house
+		// state stays.
+		if (previousProfile != null)
+		{
+			pohDetector.reset();
+		}
+		lastHouseDebug = null;
+		coordinator.configChanged(settings.characterChanged());
 	}
 
 	@Subscribe
@@ -367,6 +443,9 @@ public class ShortestPathPlugin extends Plugin
 	{
 		pohService.refreshFromDialog();
 		pohService.persistIfDirty();
+		pohDetector.gameTick();
+		pushHouseDebug();
+		trackHouseProgress();
 
 		coordinator.gameTick(client.getTickCount());
 
@@ -390,6 +469,37 @@ public class ShortestPathPlugin extends Plugin
 			boatPoint == null ? WorldPointUtil.UNDEFINED : WorldPointUtil.fromLocalInstance(client, boatPoint),
 			boatEntity == null ? WorldPointUtil.UNDEFINED
 				: Math.floorMod((boatEntity.getTargetOrientation() + 64) / 128, 16));
+	}
+
+	/** Notes where the player is on the route, for the house overlays' choice of house visit. */
+	private void trackHouseProgress()
+	{
+		ActiveSearch search = scheduler.getActiveSearch();
+		Player player = client.getLocalPlayer();
+		houseProgress.tick(search == null ? null : search.getPath(),
+			player == null ? WorldPointUtil.UNDEFINED : WorldPointUtil.fromLocalInstance(client, player),
+			settings.num(ConfigKey.RECALCULATE_DISTANCE));
+	}
+
+	/**
+	 * Hands the sidebar's House Debug block the detector's latest report,
+	 * built here on the client thread, only while the debug panel is on and
+	 * only when the text changed.
+	 */
+	private void pushHouseDebug()
+	{
+		ShortestPathPanel sidebar = panel;
+		if (sidebar == null || !settings.bool(ConfigKey.DRAW_DEBUG_PANEL))
+		{
+			lastHouseDebug = null;
+			return;
+		}
+		String text = HouseDebug.text(pohDetector.debug());
+		if (!text.equals(lastHouseDebug))
+		{
+			lastHouseDebug = text;
+			SwingUtilities.invokeLater(() -> sidebar.setHouseDebug(text));
+		}
 	}
 
 	@Subscribe
@@ -460,6 +570,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			pohService.nexusDialogOpened(clientThread);
 		}
+		pohDetector.widgetLoaded(event.getGroupId());
 
 		// Refresh the spirit tree cache on every menu open: the menu is
 		// authoritative for the planted patches it lists, and other detection
@@ -479,6 +590,7 @@ public class ShortestPathPlugin extends Plugin
 	public void onWidgetClosed(WidgetClosed event)
 	{
 		annotator.widgetClosed(event.getGroupId());
+		pohDetector.widgetClosed(event.getGroupId());
 	}
 
 	@Subscribe

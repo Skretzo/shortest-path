@@ -216,6 +216,23 @@ public class PortalNexusKeybindTest
 	}
 
 	@Test
+	public void ownKeysAreNotShownInAnotherPlayersHouse()
+	{
+		ConfigManager configManager = mock(ConfigManager.class);
+		when(configManager.getRSProfileConfiguration("shortestpath", PohService.CONFIG_KEY)).thenReturn("2|lassar=Y");
+		PohService service = new PohService(configManager);
+		service.loadFromProfile();
+		assertEquals("Y: Lassar Portal", service.apply("Lassar Portal"));
+
+		service.setOwnKeysApply(false);
+		assertEquals("Lassar Portal", service.apply("Lassar Portal"));
+		assertEquals("Lassar Portal", service.apply("Y: Lassar Portal"));
+
+		service.setOwnKeysApply(true);
+		assertEquals("Y: Lassar Portal", service.apply("Lassar Portal"));
+	}
+
+	@Test
 	public void testPersistIfDirtyWritesRsProfile()
 	{
 		ConfigManager configManager = mock(ConfigManager.class);
