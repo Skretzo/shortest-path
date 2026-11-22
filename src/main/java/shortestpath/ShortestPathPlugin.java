@@ -9,6 +9,7 @@ import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.events.*;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.InventoryID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -430,6 +431,13 @@ public class ShortestPathPlugin extends Plugin
 		// The boat varbits feed the sailing snapshot and may declare a
 		// route-invalidating change through the service.
 		sailing.onVarbitChanged(event.getVarbitId());
+		// The spellbook gates which teleport spells the route may cast.
+		if (event.getVarbitId() == VarbitID.SPELLBOOK)
+		{
+			Player player = client.getLocalPlayer();
+			coordinator.spellbookChanged(player == null ? WorldPointUtil.UNDEFINED
+				: WorldPointUtil.fromLocalInstance(client, player));
+		}
 	}
 
 	@Subscribe

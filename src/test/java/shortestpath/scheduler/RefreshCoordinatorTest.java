@@ -175,6 +175,35 @@ public class RefreshCoordinatorTest
 	}
 
 	@Test
+	public void spellbookChangedRestartsFromWhereThePlayerStands()
+	{
+		runningSearch(11, Targets.at(Set.of(13)));
+
+		coordinator.spellbookChanged(21);
+
+		verify(scheduler).restart("spellbook change", 21, Targets.at(Set.of(13)));
+	}
+
+	@Test
+	public void spellbookChangedKeepsAStartThePlayerSet()
+	{
+		runningSearch(11, Targets.at(Set.of(13)));
+		when(scheduler.isStartPointSet()).thenReturn(true);
+
+		coordinator.spellbookChanged(21);
+
+		verify(scheduler).restart("spellbook change", 11, Targets.at(Set.of(13)));
+	}
+
+	@Test
+	public void spellbookChangedWithoutASearchDoesNothing()
+	{
+		coordinator.spellbookChanged(21);
+
+		verify(scheduler, never()).restart(anyString(), anyInt(), any());
+	}
+
+	@Test
 	public void configChangedRestartsWithoutBackendPrepForPlainRoutingKeys()
 	{
 		runningSearch(11, Targets.at(Set.of(13)));

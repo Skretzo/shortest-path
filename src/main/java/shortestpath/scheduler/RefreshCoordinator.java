@@ -152,6 +152,24 @@ public class RefreshCoordinator
 	}
 
 	/**
+	 * The player switched spellbook, which changes which teleport spells the
+	 * route may cast. The running search restarts from where the player
+	 * stands now — the swap happens there, and the old start may be far
+	 * behind — unless the player set the start themselves.
+	 */
+	public void spellbookChanged(int playerLocation)
+	{
+		ActiveSearch pathfinder = scheduler.getActiveSearch();
+		if (pathfinder == null)
+		{
+			return;
+		}
+		int start = scheduler.isStartPointSet() || playerLocation == WorldPointUtil.UNDEFINED
+			? pathfinder.getStart() : playerLocation;
+		scheduler.restart("spellbook change", start, pathfinder.getTargets());
+	}
+
+	/**
 	 * A config-profile switch: warms the backend again and restarts the
 	 * running search, if any. Returns whether a search was restarted so the
 	 * shell can queue its no-search config refresh fallback itself.
