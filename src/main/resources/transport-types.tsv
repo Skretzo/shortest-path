@@ -22,6 +22,6 @@ TELEPORTATION_LEVER	/transports/teleportation_levers.tsv	useTeleportationLevers	
 TELEPORTATION_MINIGAME	/transports/teleportation_minigames.tsv	useTeleportationMinigames	costTeleportationMinigames		true		
 TELEPORTATION_PORTAL	/transports/teleportation_portals.tsv	useTeleportationPortals	costTeleportationPortals				
 TELEPORTATION_PORTAL_POH	/transports/teleportation_portals_poh.tsv		costTeleportationPortals				
-TELEPORTATION_SPELL	/transports/teleportation_spells.tsv	useTeleportationSpells	costTeleportationSpells		true		
-TELEPORTATION_SPELL_HOME	/transports/teleportation_spells_home.tsv	useTeleportationSpellsHome	costTeleportationSpellsHome		true		
+TELEPORTATION_SPELL	/transports/teleportation_spells.tsv,/transports/teleportation_spells_swapped.tsv	useTeleportationSpells	costTeleportationSpells		true		
+TELEPORTATION_SPELL_HOME	/transports/teleportation_spells_home.tsv,/transports/teleportation_spells_home_swapped.tsv	useTeleportationSpellsHome	costTeleportationSpellsHome		true		
 WILDERNESS_OBELISK	/transports/wilderness_obelisks.tsv	useWildernessObelisks	costWildernessObelisks				

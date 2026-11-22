@@ -288,8 +288,11 @@ public class ShortestPathPanel extends PluginPanel
 			familyThresholdRows("useTeleportationLevers"));
 		addFamilyCard(transports, "useTeleportationPortals", ItemID.DT2_ANIMA_PORTAL,
 			familyThresholdRows("useTeleportationPortals"));
+		List<SearchRow> spellDetail = new ArrayList<>(
+			List.of(familyThresholdRows("useTeleportationSpells")));
+		spellDetail.add(checkRow("useSpellbookSwap"));
 		addFamilyCard(transports, "useTeleportationSpells", ItemID.LAWRUNE,
-			familyThresholdRows("useTeleportationSpells"));
+			spellDetail.toArray(new SearchRow[0]));
 		addFamilyCard(transports, "useTeleportationSpellsHome", ItemID.POH_TABLET_TELEPORTTOHOUSE,
 			familyThresholdRows("useTeleportationSpellsHome"));
 		// The MINIGAME_TELEPORT spell-icon item has no inventory sprite —

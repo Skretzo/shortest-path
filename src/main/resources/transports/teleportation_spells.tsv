@@ -1,4 +1,5 @@
 # Destination	Items	Skills	Quests	Duration	Display info	Wilderness level	Varbits	VarPlayers
+# Rows from other spellbooks feed teleportation_spells_swapped.tsv: after editing, run python3 scripts/generate_spellbook_swap_spells.py								
 # Standard Spellbook - Varbit 4070=0								
 # Varrock Teleport								
 3213 3424 0	AIR_RUNE=3&&FIRE_RUNE=1&&LAW_RUNE=1	25 Magic		4	Varrock Teleport	20	4070=0	

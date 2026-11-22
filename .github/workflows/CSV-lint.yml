@@ -48,6 +48,9 @@ jobs:
         if: steps.tsv-check.outcome == 'failure'
         run: exit 1
 
+      - name: Generated TSVs are current
+        run: python3 scripts/generate_spellbook_swap_spells.py --check
+
       - name: Install csvlint
         run: |
           curl -L https://github.com/Clever/csvlint/releases/download/v0.3.0/csvlint-v0.3.0-linux-amd64.tar.gz | tar xz

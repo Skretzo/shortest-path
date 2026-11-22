@@ -37,6 +37,15 @@ public enum Unlock
 	MOR_UL_REK,
 
 	/**
+	 * Routing through the Lunar spell Spellbook Swap, declared by the
+	 * {@code useSpellbookSwap} config key (on by default). Unlike the other
+	 * unlocks this is a routing preference, not account state: the generated
+	 * Spellbook Swap teleports carry it as a pure-unlock Items term, so the
+	 * key switches them all off.
+	 */
+	SPELLBOOK_SWAP,
+
+	/**
 	 * Logs deposited in a balloon route's destination basket, which the pilot
 	 * consumes per destination (regular, oak, willow, yew or magic). The
 	 * stored stack is not exposed to the client, so the player declares it

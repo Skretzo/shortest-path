@@ -157,9 +157,9 @@ public final class ResourceLoader
 
 		for (TransportType type : TransportType.values())
 		{
-			if (type.hasResourcePath())
+			for (String path : type.getResourcePaths())
 			{
-				addTransports(transports, type.getResourcePath(), type,
+				addTransports(transports, path, type,
 					type.hasRadiusThreshold() ? type.getRadiusThreshold() : 0);
 			}
 		}

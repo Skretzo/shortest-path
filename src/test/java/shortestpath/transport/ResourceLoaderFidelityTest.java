@@ -71,6 +71,8 @@ public class ResourceLoaderFidelityTest
 		"/transports/teleportation_portals_poh.tsv",
 		"/transports/teleportation_spells.tsv",
 		"/transports/teleportation_spells_home.tsv",
+		"/transports/teleportation_spells_home_swapped.tsv",
+		"/transports/teleportation_spells_swapped.tsv",
 		"/transports/transports.tsv",
 		"/transports/wilderness_obelisks.tsv",
 	};
@@ -199,7 +201,7 @@ public class ResourceLoaderFidelityTest
 	{
 		for (TransportType type : TransportType.values())
 		{
-			if (path.equals(type.getResourcePath()))
+			if (type.getResourcePaths().contains(path))
 			{
 				return type;
 			}
