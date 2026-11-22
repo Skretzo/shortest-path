@@ -132,6 +132,15 @@ public class TransportItemsSatisfactionTest
 	}
 
 	@Test
+	public void aetherRunePaysForSoulRune()
+	{
+		TransportItems soulSpell = new ItemRequirementParser().parse("LAW_RUNE=2&&SOUL_RUNE=1");
+		Assert.assertTrue(satisfied(soulSpell,
+			ItemID.AETHERRUNE, 1,
+			ItemID.LAWRUNE, 2));
+	}
+
+	@Test
 	public void twoTomesCannotCoverEarthAndFire()
 	{
 		Assert.assertFalse(satisfied(earthAndFire(),
