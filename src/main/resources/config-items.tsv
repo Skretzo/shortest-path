@@ -18,6 +18,7 @@ useTeleportationLevers	Use Teleportation Levers	Whether to include teleportation
 useTeleportationPortals	Use Teleportation Portals	Whether to include teleportation portals in the path<br>(e.g. the portal from Ferox Enclave to Castle Wars)		
 useTeleportationSpells	Use Teleportation Spells	Whether to include teleportation spells in the path		
 useTeleportationSpellsHome	Use Home Teleport Spells	Whether to include Home Teleport spells in the path		
+useSpellbookSwap	Use Spellbook Swap	Whether to cast teleport spells from other spellbooks through the Lunar<br>Spellbook Swap spell, including home teleports		
 useTeleportationMinigames	Use Teleportation To Minigames	Whether to include teleportation to minigames/activities/grouping in the path<br>(e.g. the Nightmare Zone minigame teleport). These teleports share a 20 minute cooldown.		
 useWildernessObelisks	Use Wilderness Obelisks	Whether to include wilderness obelisks in the path		
 useSeasonalTransports	Use Seasonal Transports	Whether to include seasonal transports like League teleports in the path		

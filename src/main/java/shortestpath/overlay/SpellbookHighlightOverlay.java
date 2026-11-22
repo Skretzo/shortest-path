@@ -18,6 +18,11 @@ import shortestpath.transport.*;
 public class SpellbookHighlightOverlay extends AbstractHighlightOverlay
 {
 	private static final Map<String, Integer> SPELL_WIDGET_IDS = new HashMap<>();
+	/**
+	 * The name of the Lunar spell, and the display-info prefix of the rows
+	 * {@code scripts/generate_spellbook_swap_spells.py} derives from it.
+	 */
+	private static final String SPELLBOOK_SWAP = "Spellbook Swap";
 
 	static
 	{
@@ -62,7 +67,8 @@ public class SpellbookHighlightOverlay extends AbstractHighlightOverlay
 
 		for (Transport transport : transports)
 		{
-			if (!TransportType.TELEPORTATION_SPELL.equals(transport.getType()))
+			if (!TransportType.TELEPORTATION_SPELL.equals(transport.getType())
+				&& !TransportType.TELEPORTATION_SPELL_HOME.equals(transport.getType()))
 			{
 				continue;
 			}
@@ -70,6 +76,13 @@ public class SpellbookHighlightOverlay extends AbstractHighlightOverlay
 			if (displayInfo == null)
 			{
 				continue;
+			}
+			// A swapped spell is cast after Spellbook Swap, so the swap is
+			// the spell to click; the route recalculates onto the swapped-to
+			// spell once the spellbook changes.
+			if (displayInfo.startsWith(SPELLBOOK_SWAP + " ("))
+			{
+				displayInfo = SPELLBOOK_SWAP;
 			}
 			Integer widgetId = SPELL_WIDGET_IDS.get(displayInfo);
 			if (widgetId == null)

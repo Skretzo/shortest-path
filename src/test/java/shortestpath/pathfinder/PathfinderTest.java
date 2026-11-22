@@ -2658,6 +2658,28 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void spellbookSwapTeleportsFollowTheConfigKey()
+	{
+		Map<Integer, Integer> varbits = new HashMap<>();
+		varbits.put(VarbitID.SPELLBOOK, 2); // Lunar
+		setupInventory(
+			new Item(ItemID.ASTRALRUNE, 3),
+			new Item(ItemID.COSMICRUNE, 2),
+			new Item(ItemID.LAWRUNE, 2),
+			new Item(ItemID.AIRRUNE, 3),
+			new Item(ItemID.FIRERUNE, 1));
+		setupEquipment();
+		config.set("useTeleportationSpells", true);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE, varbits);
+		assertTrue(hasUsableTeleport("Spellbook Swap (Standard): Varrock Teleport"));
+		assertFalse("the standard spell needs the standard spellbook", hasUsableTeleport("Varrock Teleport"));
+
+		config.set("useSpellbookSwap", false);
+		pathfinderConfig.refresh();
+		assertFalse(hasUsableTeleport("Spellbook Swap (Standard): Varrock Teleport"));
+	}
+
+	@Test
 	public void testWildernessRouteWithGloryAndRunesDoesNotUseSpellTooEarly()
 	{
 		// At this start point the route should use glory first because it becomes legal earlier and is closer to the eventual goal.

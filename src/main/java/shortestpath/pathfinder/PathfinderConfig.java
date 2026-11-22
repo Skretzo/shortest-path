@@ -472,6 +472,10 @@ public class PathfinderConfig
 		{
 			declaredUnlocks.add(Unlock.MOR_UL_REK);
 		}
+		if (settings.bool(ConfigKey.USE_SPELLBOOK_SWAP))
+		{
+			declaredUnlocks.add(Unlock.SPELLBOOK_SWAP);
+		}
 		unlocks = Collections.unmodifiableSet(declaredUnlocks);
 
 		// The basket unlock is per balloon route: the configured

@@ -40,7 +40,7 @@ public class ConfigDemotionTest
 {
 	/**
 	 * The exact set of keyNames that may exist only as keyed registry rows —
-	 * the panel-owned route options plus the internal state keys. 61 names;
+	 * the panel-owned route options plus the internal state keys. 62 names;
 	 * the write-pair keys
 	 * ({@code builtTeleportationBoxes}/{@code builtTeleportationPortalsPoh})
 	 * appear once even though each is declared on both a getter and a
@@ -100,6 +100,7 @@ public class ConfigDemotionTest
 		"useQuetzals",
 		"useSeasonalTransports",
 		"useShips",
+		"useSpellbookSwap",
 		"useSpiritTrees",
 		"useTeleportationLevers",
 		"useTeleportationMinigames",
@@ -156,7 +157,7 @@ public class ConfigDemotionTest
 	@Test
 	public void exactlyThePanelOwnedKeysAreHidden()
 	{
-		assertEquals("the pinned boundary is 61 keyNames", 61, PANEL_OWNED_KEYS.size());
+		assertEquals("the pinned boundary is 62 keyNames", 62, PANEL_OWNED_KEYS.size());
 
 		// The hidden-key surface lives in the keyed registry, not on the
 		// interface: no @ConfigItem may carry hidden=true any more, and every

@@ -200,6 +200,16 @@ public enum TransportType
 		return resourcePath != null;
 	}
 
+	/**
+	 * The TSV resources this type loads from: the {@code resource-path}
+	 * column split on commas, so a hand-written file can be joined by a
+	 * generated one. Empty when the type has no resource.
+	 */
+	public List<String> getResourcePaths()
+	{
+		return resourcePath == null ? List.of() : List.of(resourcePath.split(","));
+	}
+
 	public boolean hasRadiusThreshold()
 	{
 		return radiusThreshold != null;
