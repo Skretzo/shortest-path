@@ -5185,6 +5185,10 @@
 # Brimhaven Dungeon Vines									
 2691 9564 0	2689 9564 0	Chop-down Vines 29731		AXE=1				2	
 2689 9564 0	2691 9564 0	Chop-down Vines 29731		AXE=1				2	
+2695 9482 0	2693 9482 0	Chop-down Vines 21735	34 Woodcutting	AXE=1				2	
+2693 9482 0	2695 9482 0	Chop-down Vines 21735						2	
+2674 9479 0	2676 9479 0	Chop-down Vines 21734	34 Woodcutting	AXE=1				2	
+2676 9479 0	2674 9479 0	Chop-down Vines 21734						2	
 									
 # Shilo Village									
 2835 2987 0	2835 2987 1	Climb-up Ladder 16684						2	
