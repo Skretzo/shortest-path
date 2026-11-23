@@ -17,12 +17,12 @@
 1635 3746 0	Arceuus				
 1624 3749 0	Arceuus				
 1635 3749 0	Arceuus				
-2655 3280 0	Ardougne				
-2655 3283 0	Ardougne				
-2655 3286 0	Ardougne				
-2615 3332 0	Ardougne				
-2618 3332 0	Ardougne				
-2619 3332 0	Ardougne				
+2655 3280 0	Ardougne South				
+2655 3283 0	Ardougne South				
+2655 3286 0	Ardougne South				
+2615 3332 0	Ardougne North				
+2618 3332 0	Ardougne North				
+2619 3332 0	Ardougne North				
 1416 3350 0	Auburnvale		Children of the Sun		
 1413 3353 0	Auburnvale		Children of the Sun		
 1419 3353 0	Auburnvale		Children of the Sun		
@@ -91,17 +91,17 @@
 3098 3494 0	Edgeville				
 3382 3269 0	Emir's Arena				
 2620 3895 0	Etceteria		Throne of Miscellania		
-3010 3355 0	Falador				
-3011 3355 0	Falador				
-3012 3355 0	Falador				
-3013 3355 0	Falador				
-3014 3355 0	Falador				
-3015 3355 0	Falador				
-2945 3368 0	Falador				
-2946 3368 0	Falador				
-2947 3368 0	Falador				
-2948 3368 0	Falador				
-2949 3368 0	Falador				
+3010 3355 0	Falador East				
+3011 3355 0	Falador East				
+3012 3355 0	Falador East				
+3013 3355 0	Falador East				
+3014 3355 0	Falador East				
+3015 3355 0	Falador East				
+2945 3368 0	Falador West				
+2946 3368 0	Falador West				
+2947 3368 0	Falador West				
+2948 3368 0	Falador West				
+2949 3368 0	Falador West				
 1253 3741 0	Farming Guild				
 # Added skill checks for north Farming Guild banks. There is no collsion wall where the skill check can be enforced in the pathfinder, it's server side.					
 1248 3758 0	Farming Guild	85 Farming			
@@ -271,17 +271,17 @@
 2442 3488 1	Tree Gnome Stronghold				
 2442 3489 1	Tree Gnome Stronghold				
 3810 3021 0	Trouble Brewing		Cabin Fever		
-3251 3420 0	Varrock				
-3252 3420 0	Varrock				
-3253 3420 0	Varrock				
-3254 3420 0	Varrock				
-3255 3420 0	Varrock				
-3256 3420 0	Varrock				
-3185 3436 0	Varrock				
-3185 3438 0	Varrock				
-3185 3440 0	Varrock				
-3185 3442 0	Varrock				
-3185 3444 0	Varrock				
+3251 3420 0	Varrock East				
+3252 3420 0	Varrock East				
+3253 3420 0	Varrock East				
+3254 3420 0	Varrock East				
+3255 3420 0	Varrock East				
+3256 3420 0	Varrock East				
+3185 3436 0	Varrock West				
+3185 3438 0	Varrock West				
+3185 3440 0	Varrock West				
+3185 3442 0	Varrock West				
+3185 3444 0	Varrock West				
 3649 3208 0	Ver Sinhaza		Priest in Peril		
 3651 3208 0	Ver Sinhaza		Priest in Peril		
 3652 3208 0	Ver Sinhaza		Priest in Peril		
