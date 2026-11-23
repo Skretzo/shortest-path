@@ -80,6 +80,7 @@ costTeleportationMinigames	Teleportation To Minigame Threshold	How many extra ti
 costWildernessObelisks	Wilderness Obelisk Threshold	How many extra tiles a wilderness obelisk must save<br>to be preferred over walking or other transports	0	10000
 costSeasonalTransports	Seasonal Transport Threshold	How many extra tiles a seasonal transport must save<br>to be preferred over walking or other transports	0	10000
 costBankVisit	Bank Visit Threshold	How many extra tiles fetching a teleport item from your bank must save<br>to be preferred over options already at hand (0 treats banking as free)	0	10000
+costOtherBanks	Other Bank Threshold	How many extra tiles a bank you have not preferred must save<br>to be used instead of your preferred banks (only applies once you prefer a bank)	0	10000
 unreachableText		Text shown on the player tile when the destination cannot be reached		
 builtTeleportationBoxes		ID=X Y Z;ID=X Y Z;ID=X Y Z		
 builtTeleportationPortalsPoh		ID=X Y Z;ID=X Y Z;ID=X Y Z		

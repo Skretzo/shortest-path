@@ -304,6 +304,66 @@ public final class ResourceLoader
 	}
 
 	/**
+	 * The bank each {@code bank.tsv} tile belongs to, named by its Info column, in file order.
+	 * A player picks preferred banks by these names, so every tile of one bank shares its name.
+	 */
+	public static Map<Integer, String> bankNames()
+	{
+		try
+		{
+			return parseBankNames(Util.resourceString("/destinations/game_features/bank.tsv"));
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException(e);
+		}
+	}
+
+	static Map<Integer, String> parseBankNames(String contents)
+	{
+		Map<Integer, String> names = new LinkedHashMap<>();
+		try (Scanner scanner = new Scanner(contents))
+		{
+			String[] headers = parse_header_line(scanner);
+			for (int i = 0; i < headers.length; i++)
+			{
+				headers[i] = headers[i].trim();
+			}
+			int destCol = indexOf(headers, "Destination");
+			int infoCol = indexOf(headers, "Info");
+			if (destCol < 0 || infoCol < 0)
+			{
+				return names;
+			}
+			while (scanner.hasNextLine())
+			{
+				String line = scanner.nextLine();
+				if (line.startsWith(PREFIX_COMMENT) || line.isBlank())
+				{
+					continue;
+				}
+				String[] fields = line.split(DELIM_COLUMN, -1);
+				String[] point = fieldAt(fields, destCol).trim().split(DELIM);
+				String name = fieldAt(fields, infoCol).trim();
+				if (point.length != 3 || name.isEmpty())
+				{
+					continue;
+				}
+				try
+				{
+					names.putIfAbsent(WorldPointUtil.packWorldPoint(Integer.parseInt(point[0]),
+						Integer.parseInt(point[1]), Integer.parseInt(point[2])), name);
+				}
+				catch (NumberFormatException e)
+				{
+					log.error("Invalid destination coordinate in bank.tsv", e);
+				}
+			}
+		}
+		return names;
+	}
+
+	/**
 	 * Content seam for the bank-requirements row idiom: keep-arity field
 	 * splitting with trimmed headers, kept verbatim from the incumbent
 	 * reader. Package-private for tests.

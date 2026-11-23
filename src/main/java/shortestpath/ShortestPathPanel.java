@@ -27,6 +27,7 @@ import lombok.experimental.Accessors;
 import shortestpath.items.ItemStateService;
 import shortestpath.settings.*;
 import shortestpath.poh.*;
+import shortestpath.requirement.PreferredBanks;
 import shortestpath.transport.BalloonRoute;
 
 /**
@@ -75,6 +76,7 @@ public class ShortestPathPanel extends PluginPanel
 	static final Color EXPANDABLE_DETAIL_BORDER = ColorScheme.DARKER_GRAY_COLOR;
 	private static final String SEARCH_TOOLTIP = "Search transports, unlocks and restrictions";
 	private static final String OWNED_FILTER_KEY = "restrictionsOwnedOnly";
+	private static final String PREFERRED_BANKS_KEY = "preferredBanks";
 	private static final int FOOTER_BUTTON_EDGE = 22;
 	private static final int FOOTER_ICON_SIZE = 18;
 	private static final String GITHUB_URL = "https://github.com/Skretzo/shortest-path";
@@ -208,6 +210,7 @@ public class ShortestPathPanel extends PluginPanel
 		buildTransportsCategory();
 		buildRestrictionsCategory();
 		buildPohCategory();
+		buildBanksCategory();
 
 		body.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		body.add(homeView(), HOME_VIEW);
@@ -224,6 +227,7 @@ public class ShortestPathPanel extends PluginPanel
 			registerConfigListener(card.getKeyName(), this::refreshTiles);
 		}
 		registerConfigListener("blockedTeleportItems", this::refreshTiles);
+		registerConfigListener(PREFERRED_BANKS_KEY, this::refreshTiles);
 		showHome();
 	}
 
@@ -329,6 +333,68 @@ public class ShortestPathPanel extends PluginPanel
 		registerConfigListener(OWNED_FILTER_KEY, applyOwned);
 		applyOwned.run();
 		restrictionsCategory.setTrailing(owned);
+	}
+
+	/**
+	 * The Banks section: which banks the player prefers, and how many tiles
+	 * another bank must save to be used instead. One checkbox row per named
+	 * bank writes the {@code preferredBanks} list; the search filters by name.
+	 */
+	private void buildBanksCategory()
+	{
+		CategoryPanel banks = new CategoryPanel("Banks", "preferred banks", this::showHome);
+		categories.add(banks);
+
+		// Routes only bank with the setting on, so say why preferring a bank changes nothing.
+		JPanel bankingOff = new JPanel(new BorderLayout());
+		bankingOff.setOpaque(false);
+		JLabel bankingOffLabel = new JLabel(html("Routes only visit a bank when "
+			+ configName("includeBankPath") + " is on in Settings."));
+		bankingOffLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		bankingOffLabel.setFont(FontManager.getRunescapeSmallFont());
+		bankingOff.add(bankingOffLabel, BorderLayout.CENTER);
+		Runnable syncBankingOff = () -> bankingOff.setVisible(
+			!Boolean.TRUE.equals(settings.configured("includeBankPath")));
+		registerConfigListener("includeBankPath", syncBankingOff);
+		syncBankingOff.run();
+		banks.addRow(bankingOff, "Banking off", searchable(configName("includeBankPath")));
+
+		banks.addRow(spinnerRow("costOtherBanks"));
+		for (String name : PreferredBanks.names())
+		{
+			banks.addRow(bankRow(name));
+		}
+	}
+
+	private SearchRow bankRow(String name)
+	{
+		JCheckBox preferred = new JCheckBox();
+		preferred.setSelected(preferredBanks().contains(name));
+		String description = "Prefer " + name + ". Other banks must save the "
+			+ configName("costOtherBanks") + " to be used instead.";
+		preferred.setToolTipText(html(description));
+		PanelRows.controlRow(this, PREFERRED_BANKS_KEY, preferred,
+			(control, guard) -> control.addActionListener(e -> PanelRows.guardedWrite(guard, () ->
+			{
+				Set<String> names = preferredBanks();
+				if (control.isSelected())
+				{
+					names.add(name);
+				}
+				else
+				{
+					names.remove(name);
+				}
+				settings.write(PREFERRED_BANKS_KEY, PreferredBanks.format(names));
+			})),
+			() -> preferred.setSelected(preferredBanks().contains(name)),
+			null);
+		return labeledRow(name, description, preferred);
+	}
+
+	private Set<String> preferredBanks()
+	{
+		return PreferredBanks.parse(settings.configured(PREFERRED_BANKS_KEY));
 	}
 
 	/**
@@ -457,6 +523,8 @@ public class ShortestPathPanel extends PluginPanel
 		{
 			case "Teleport Restrictions":
 				return ItemID.RING_OF_DUELING_8;
+			case "Banks":
+				return ItemID.COINS_10000;
 			case "Player-Owned House":
 				return ItemID.POH_TABLET_TELEPORTTOHOUSE;
 			default:
@@ -497,6 +565,9 @@ public class ShortestPathPanel extends PluginPanel
 				int restricted = restrictionListPanel == null
 					? 0 : restrictionListPanel.restrictionCount();
 				return restricted == 0 ? "All allowed" : restricted + " restricted";
+			case "Banks":
+				int preferred = preferredBanks().size();
+				return preferred == 0 ? "None preferred" : preferred + " preferred";
 			case "Player-Owned House":
 				return Boolean.TRUE.equals(settings.configured("usePoh")) ? "On" : "Off";
 			default:

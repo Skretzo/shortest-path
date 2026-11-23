@@ -224,6 +224,10 @@ public class PathfinderConfig
 	private volatile int costConsumableTeleportationItems;
 	@Getter
 	private volatile int bankVisitCost;
+	/** The tiles of the player's preferred banks; empty when no bank is preferred. */
+	private volatile Set<Integer> preferredBankTiles = Set.of();
+	/** What a visit to a bank outside {@link #preferredBankTiles} costs on top of {@link #bankVisitCost}. */
+	private volatile int otherBankCost;
 	private volatile int currencyThreshold;
 	/**
 	 * Whether the player is aboard a boat, read from the sailing service's
@@ -363,7 +367,8 @@ public class PathfinderConfig
 	{
 		return PreparedRoutingAccount.compile(
 			getTransportAvailability(BankVisitState.CARRIED), getTransportAvailability(BankVisitState.BANKED), includeBankPath || targetsNeedBank,
-			accessibleBankTiles, bankVisitCost, allowTransports, this::getAdditionalTransportCost);
+			accessibleBankTiles, bankVisitCost, preferredBankTiles, otherBankCost, allowTransports,
+			this::getAdditionalTransportCost);
 	}
 
 	public boolean hasDestination(String destinationType)
@@ -519,6 +524,9 @@ public class PathfinderConfig
 
 		costConsumableTeleportationItems = settings.num(ConfigKey.COST_CONSUMABLE_TELEPORTATION_ITEMS);
 		bankVisitCost = settings.num(ConfigKey.COST_BANK_VISIT);
+		preferredBankTiles = Set.copyOf(PreferredBanks.tiles(
+			PreferredBanks.parse(settings.get(ConfigKey.PREFERRED_BANKS)), PreferredBanks.namesByTile()));
+		otherBankCost = settings.num(ConfigKey.COST_OTHER_BANKS);
 
 		// Reset the sailing dispatch inputs every refresh: the service owns the
 		// boat-state reads and republishes its snapshot here unconditionally, so a

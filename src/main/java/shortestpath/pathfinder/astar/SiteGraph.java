@@ -33,9 +33,9 @@ public final class SiteGraph
 		this.account = account;
 		int spatialCount = stat.siteCount();
 		validateEndpoints(account, stat);
-		int[] bankSites = bankSites(stat, account);
+		int[] bankTiles = bankTiles(stat, account);
 		int[] globalDestinations = globalDestinations(account, stat);
-		hasBankedGlobalHub = account.allowTransports() && account.bankPathEnabled() && bankSites.length != 0
+		hasBankedGlobalHub = account.allowTransports() && account.bankPathEnabled() && bankTiles.length != 0
 			&& globalDestinations.length != 0;
 		nodeCount = spatialCount + (hasBankedGlobalHub ? 1 : 0);
 
@@ -44,19 +44,20 @@ public final class SiteGraph
 		addLocalEdges(edges, account.localView(BankVisitState.BANKED), BankVisitState.BANKED, stat);
 		if (account.bankPathEnabled())
 		{
-			for (int bankSite : bankSites)
+			for (int bankTile : bankTiles)
 			{
+				int bankSite = stat.siteIndex(bankTile);
 				edges.add(stateId(bankSite, BankVisitState.CARRIED), stateId(bankSite, BankVisitState.BANKED),
-					account.bankVisitCost(), true, EdgeKind.BANK_TRANSITION);
+					account.bankVisitCost(bankTile), true, EdgeKind.BANK_TRANSITION);
 			}
 		}
 		if (hasBankedGlobalHub)
 		{
 			int hub = spatialCount;
-			for (int bankSite : bankSites)
+			for (int bankTile : bankTiles)
 			{
-				edges.add(stateId(bankSite, BankVisitState.CARRIED), stateId(hub, BankVisitState.BANKED),
-					account.bankVisitCost(), true, EdgeKind.BANK_GLOBAL_ENTRY);
+				edges.add(stateId(stat.siteIndex(bankTile), BankVisitState.CARRIED), stateId(hub, BankVisitState.BANKED),
+					account.bankVisitCost(bankTile), true, EdgeKind.BANK_GLOBAL_ENTRY);
 			}
 			for (int destination : globalDestinations)
 			{
@@ -197,19 +198,18 @@ public final class SiteGraph
 		}
 	}
 
-	/** The static bank sites this account may use. */
-	private static int[] bankSites(RoutingStatic stat, PreparedRoutingAccount account)
+	/** The static bank tiles this account may use; each is a site. */
+	private static int[] bankTiles(RoutingStatic stat, PreparedRoutingAccount account)
 	{
 		int[] result = new int[stat.reachableBankCount()];
 		int count = 0;
 		for (int i = 0; i < result.length; i++)
 		{
 			int tile = stat.reachableBankTile(i);
-			int site = stat.siteIndex(tile);
-			if (site < 0)
+			if (stat.siteIndex(tile) < 0)
 				throw new IllegalStateException("reachable bank is not a static site");
 			if (account.bankAccessible(tile))
-				result[count++] = site;
+				result[count++] = tile;
 		}
 		return Arrays.copyOf(result, count);
 	}

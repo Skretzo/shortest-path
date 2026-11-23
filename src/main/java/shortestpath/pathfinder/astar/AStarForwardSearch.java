@@ -323,9 +323,9 @@ public final class AStarForwardSearch
 		private void relaxBank(int node, BankVisitState banked, int from, int cost)
 		{
 			if (banked == BankVisitState.BANKED || !target.account().bankPathEnabled() || !space.isUsableBankNode(node)) return;
-			// Every bank charges the same visit cost, so comparing arrival costs with bestBankCost
-			// (an arrival cost too) still orders the banks correctly.
-			int bankedCost = CostArithmetic.add(cost, target.account().bankVisitCost());
+			// A bank counts as reached once its visit is paid, so banks outside the player's
+			// preferred set compare by arrival plus their extra cost, like bestBankCost.
+			int bankedCost = CostArithmetic.add(cost, target.account().bankVisitCost(space.tile(node)));
 			if (bankedCost == CostArithmetic.INF) return;
 			relaxState(from, stateForNode(node, BankVisitState.BANKED), bankedCost, 0, null, PUSH_BANKING);
 			// With hubs (a start without every global castable) the banked hub of this tile's
@@ -338,7 +338,7 @@ public final class AStarForwardSearch
 				{
 					int destination = target.account().globalDestination(here, BankVisitState.BANKED, i);
 					if (!space.globalAllowed(here, destination)) continue;
-					if (!optimized || cost <= bestBankCost[0])
+					if (!optimized || bankedCost <= bestBankCost[0])
 						relaxTransport(from, BankVisitState.BANKED, bankedCost, destination, target.account().globalCost(here, BankVisitState.BANKED, i), target.account().globalTransport(here, BankVisitState.BANKED, i), PUSH_GLOBAL);
 					else if (space.node(destination) >= 0)
 						counters.bankGlobalSuppressed++;
@@ -524,7 +524,8 @@ public final class AStarForwardSearch
 			{
 				int unbanked = heuristicValue(state);
 				counters.heuristicEvaluations++;
-				if (!optimized || !space.bankGlobalRelevant() || cost <= bestBankCost[0])
+				if (!optimized || !space.bankGlobalRelevant()
+					|| CostArithmetic.add(cost, target.account().bankVisitCost()) <= bestBankCost[0])
 					resolved = unbanked;
 				else
 				{
@@ -551,12 +552,16 @@ public final class AStarForwardSearch
 			return resolved;
 		}
 
+		/** Records the cheapest bank visit so far: arrival at a usable bank plus that bank's visit cost. */
 		private void updateBestBank(int state, int cost)
 		{
-			if (optimized && (state & 1) == 0 && space.bankGlobalRelevant() && cost < bestBankCost[0]
-				&& space.isUsableBankNode(state / 2))
+			if (!optimized || (state & 1) != 0 || !space.bankGlobalRelevant() || cost >= bestBankCost[0]
+				|| !space.isUsableBankNode(state / 2))
+				return;
+			int visited = CostArithmetic.add(cost, target.account().bankVisitCost(space.tile(state / 2)));
+			if (visited < bestBankCost[0])
 			{
-				bestBankCost[0] = cost;
+				bestBankCost[0] = visited;
 				counters.bestBankUpdates++;
 			}
 		}

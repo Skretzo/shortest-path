@@ -1,0 +1,78 @@
+# Preferred banks
+
+Routing used to treat every bank in `destinations/game_features/bank.tsv` the
+same: whichever bank made the whole trip cheapest won, even by one tick. Players
+have a home bank, out of habit or because they reach it for free (crafting cape,
+max cape, Ferox via ring of dueling). A route that sends them to Edgeville to save
+3 ticks feels wrong, and they stop trusting it.
+
+## Behaviour
+
+- **Preferred banks** (`preferredBanks`): a set of bank names. Empty, the
+  default, keeps the old behaviour exactly.
+- **Other Bank Threshold** (`costOtherBanks`, default 20 tiles): once any bank
+  is preferred, a visit to any other bank costs this much more. A preferred bank
+  costs the Bank Visit Threshold alone; any other bank costs Bank Visit Threshold
+  + Other Bank Threshold. It is in tiles, like the other thresholds.
+- **Soft, never forced.** The cost of reaching a preferred bank comes from what
+  the player has *now*. Without their usual item the preferred bank may lose,
+  which is correct. A route never walks a long way just to honour a preference.
+- The threshold applies against *not banking* too: a bank the player has not
+  preferred must also save the threshold over a route that skips banking.
+- **Only applies when the route banks**, that is when Include Path To Bank is on,
+  or the target's items are in the bank. The Banks section says so while
+  Include Path To Bank is off.
+- A preferred bank the player can't use (quest, varbit) is never visited, like
+  any inaccessible bank.
+
+## Side panel
+
+A **Banks** tile on the landing grid, after Player-Owned House. Its count line
+reads "None preferred" or "2 preferred". The section holds:
+
+```
+Routes only visit a bank when Include Path To Bank is on in Settings.   <- only while it is off
+Other Bank Threshold                [ 20 ]
+Al Kharid                              [ ]
+Aldarin                                [ ]
+…
+Ferox Enclave                          [x]
+```
+
+Rows are alphabetical, and the pinned search filters them by name.
+
+## Bank identity
+
+A bank is the `Info` name its tiles share, and the setting stores names, so a
+preference survives edits to the tiles. Towns whose single name covered two banks
+a player tells apart are split: Varrock West/East, Falador West/East and
+Ardougne North/South. Other multi-site names (Lovakengj, Prifddinas, Tree Gnome
+Stronghold, …) stay as one bank, so preferring one prefers the whole area.
+
+## Implementation
+
+- `PreparedRoutingAccount.bankVisitCost(tile)` is the cost of banking at that
+  tile. `bankVisitCost()` stays the cheapest visit, the preferred-bank cost.
+- `AStarForwardSearch` treats a bank as reached at **arrival + its visit cost**:
+  `updateBestBank` records that, and `relaxBank` compares a bank's own banked
+  cost against it before casting banked globals. The bank-dominance check in
+  `effectiveHeuristic` compares `g + bankVisitCost()`, which is identical to the
+  old check while every bank costs the same.
+- `SiteGraph` gives each bank's heuristic edges that bank's own visit cost.
+- The sailing pathfinder's `VisitedTiles` still reads the single
+  `getBankVisitCost()`; routes at sea never bank.
+
+Tests: `PreferredBankTest` (routing, including the pruning regression),
+`PathfinderConfigPreferredBanksTest` (settings reach the account),
+`PreferredBanksTest` (names and data), and the Banks section in
+`ShortestPathPanelLayoutTest`.
+
+## Not yet
+
+- Naming the bank in the route summary (`Bank (Edgeville) > …`) and a
+  **"Prefer Edgeville"** action on a route that banks elsewhere. Both belong in
+  the Routes section, which arrives with the `alternative-routes` branch.
+- Explaining a skipped preferred bank, e.g. *"Your bank (Ferox Enclave) is +38
+  without a Ring of dueling"*.
+- Showing why a preferred bank is unusable (quest, varbit) in the Banks section.
+- Ranked priority, a threshold per bank, or a per-bank allow checkbox.
