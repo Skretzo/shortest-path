@@ -1,11 +1,11 @@
 #spellName	widgetId
 Lumbridge Home Teleport	14286854
-Spellbook Swap	14286997
 Varrock Teleport	14286874
-Varrock Teleport: GE	14286874
+Varrock Teleport: Grand Exchange	14286874
 Lumbridge Teleport	14286877
 Falador Teleport	14286880
 Teleport to House	14286882
+Teleport to House (Inside)	14286882
 Teleport to House (Outside)	14286882
 Camelot Teleport	14286885
 Camelot Teleport: Seers'	14286885
@@ -27,21 +27,23 @@ Annakarl Teleport	14286954
 Ghorrock Teleport	14286955
 Lunar Home Teleport	14286957
 Moonclan Teleport	14286964
+Ourania Teleport	14287000
 Waterbirth Teleport	14286968
 Barbarian Teleport	14286972
 Khazard Teleport	14286976
 Fishing Guild Teleport	14286984
 Catherby Teleport	14286987
 Ice Plateau Teleport	14286990
-Ourania Teleport	14287000
+Spellbook Swap	14286997
 Arceuus Home Teleport	14287001
 Arceuus Library Teleport	14287003
 Draynor Manor Teleport	14287007
+Battlefront Teleport	14287019
 Mind Altar Teleport	14287009
+Respawn Teleport	14287010
 Salve Graveyard Teleport	14287011
 Fenkenstrain's Castle Teleport	14287012
 West Ardougne Teleport	14287013
 Harmony Island Teleport	14287014
 Cemetery Teleport	14287015
 Barrows Teleport	14287017
-Battlefront Teleport	14287019
