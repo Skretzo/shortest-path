@@ -34,6 +34,7 @@ public final class ResourceLoader
 {
 	private static final TsvParser tsvParser = new TsvParser();
 	private static final FieldParser<SkillLevels> SKILL_PARSER = new SkillRequirementParser();
+	private static final FieldParser<Integer> WORLD_POINT_PARSER = new WorldPointParser();
 	private static final FieldParser<Set<Quest>> QUEST_PARSER = new QuestParser();
 	private static final FieldParser<Set<VarRequirement>> VARBIT_PARSER = VarRequirementParser.forVarbits();
 	private static final FieldParser<Set<VarRequirement>> VARPLAYER_PARSER = VarRequirementParser.forVarPlayers();
@@ -311,56 +312,17 @@ public final class ResourceLoader
 	{
 		try
 		{
-			return parseBankNames(Util.resourceString("/destinations/game_features/bank.tsv"));
+			Map<Integer, String> names = new LinkedHashMap<>();
+			for (TransportRecord row : tsvParser.parse(Util.resourceString("/destinations/game_features/bank.tsv")))
+			{
+				names.putIfAbsent(WORLD_POINT_PARSER.parse(row.getDestination()), row.get("Info").trim());
+			}
+			return names;
 		}
 		catch (IOException e)
 		{
 			throw new RuntimeException(e);
 		}
-	}
-
-	static Map<Integer, String> parseBankNames(String contents)
-	{
-		Map<Integer, String> names = new LinkedHashMap<>();
-		try (Scanner scanner = new Scanner(contents))
-		{
-			String[] headers = parse_header_line(scanner);
-			for (int i = 0; i < headers.length; i++)
-			{
-				headers[i] = headers[i].trim();
-			}
-			int destCol = indexOf(headers, "Destination");
-			int infoCol = indexOf(headers, "Info");
-			if (destCol < 0 || infoCol < 0)
-			{
-				return names;
-			}
-			while (scanner.hasNextLine())
-			{
-				String line = scanner.nextLine();
-				if (line.startsWith(PREFIX_COMMENT) || line.isBlank())
-				{
-					continue;
-				}
-				String[] fields = line.split(DELIM_COLUMN, -1);
-				String[] point = fieldAt(fields, destCol).trim().split(DELIM);
-				String name = fieldAt(fields, infoCol).trim();
-				if (point.length != 3 || name.isEmpty())
-				{
-					continue;
-				}
-				try
-				{
-					names.putIfAbsent(WorldPointUtil.packWorldPoint(Integer.parseInt(point[0]),
-						Integer.parseInt(point[1]), Integer.parseInt(point[2])), name);
-				}
-				catch (NumberFormatException e)
-				{
-					log.error("Invalid destination coordinate in bank.tsv", e);
-				}
-			}
-		}
-		return names;
 	}
 
 	/**
