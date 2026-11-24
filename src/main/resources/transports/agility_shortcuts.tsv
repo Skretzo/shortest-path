@@ -742,5 +742,8 @@
 3562 3379 0	3565 3379 0	Jump-over Inconspicuous rocks (master) 29044	86 Agility		7255=138			
 3500 9510 2	3506 9505 2	Squeeze-through Crevice 16465	86 Agility					
 3506 9505 2	3500 9510 2	Squeeze-through Crevice 16465	86 Agility					
+# Brimhaven Dungeon vine to baby green dragons								
+2673 9583 0	2670 9582 2	Climb Vine 26880	87 Agility				5	
+2670 9583 2	2673 9583 0	Climb Vine 26882	87 Agility				5	
 2770 9340 0	2764 9339 0	Squeeze-through Crevice 53242	96 Agility					Legends' Quest
 2764 9339 0	2770 9340 0	Squeeze-through Crevice 53242	96 Agility					Legends' Quest

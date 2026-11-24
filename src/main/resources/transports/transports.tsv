@@ -5182,9 +5182,24 @@
 2760 3061 0	2734 9478 0	Climb Rope 30200				5629>0		2	
 2734 9478 0	2760 3061 0	Use Crevice 30201				5629>0		2	
 									
+# Brimhaven Dungeon stairs									
+2636 9517 0	2636 9510 2	Walk-up Stairs 21725						2	
+2637 9517 0	2636 9510 2	Walk-up Stairs 21725						2	
+2636 9510 2	2636 9517 0	Walk-down Stairs 21726						2	
+2643 9595 2	2649 9591 0	Walk-down Stairs 21724						2	
+2649 9591 0	2643 9595 2	Walk-up Stairs 21722						2	
+									
 # Brimhaven Dungeon Vines									
-2691 9564 0	2689 9564 0	Chop-down Vines 29731		AXE=1				2	
-2689 9564 0	2691 9564 0	Chop-down Vines 29731		AXE=1				2	
+2691 9564 0	2689 9564 0	Chop-down Vines 21731	10 Woodcutting	AXE=1				2	
+2689 9564 0	2691 9564 0	Chop-down Vines 21731						2	
+2683 9568 0	2683 9570 0	Chop-down Vines 21732	27 Woodcutting	AXE=1				2	
+2683 9570 0	2683 9568 0	Chop-down Vines 21732						2	
+2672 9499 0	2674 9499 0	Chop-down Vines 21733	22 Woodcutting	AXE=1				2	
+2674 9499 0	2672 9499 0	Chop-down Vines 21733						2	
+2695 9482 0	2693 9482 0	Chop-down Vines 21735						2	
+2693 9482 0	2695 9482 0	Chop-down Vines 21735	34 Woodcutting	AXE=1				2	
+2674 9479 0	2676 9479 0	Chop-down Vines 21734	34 Woodcutting	AXE=1				2	
+2676 9479 0	2674 9479 0	Chop-down Vines 21734						2	
 									
 # Shilo Village									
 2835 2987 0	2835 2987 1	Climb-up Ladder 16684						2	
