@@ -716,7 +716,7 @@ public class OverlayTranscriptTest
 		Widget spell = mock(Widget.class);
 		when(spell.isHidden()).thenReturn(false);
 		when(spell.getBounds()).thenReturn(new Rectangle(30, 30, 24, 24));
-		widgets.put(14286874, spell); // spell-widget-ids.tsv: Varrock Teleport
+		widgets.put(InterfaceID.MagicSpellbook.VARROCK_TELEPORT, spell);
 		check("highlight-spellbook-on", injector.getInstance(SpellbookHighlightOverlay.class));
 	}
 }

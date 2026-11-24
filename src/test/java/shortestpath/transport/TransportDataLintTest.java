@@ -562,6 +562,58 @@ public class TransportDataLintTest
 	}
 
 	/**
+	 * Asserts every teleport spell's Display info has a row in {@code spell-widget-ids.tsv}, and
+	 * every row there is used by a spell. {@code SpellbookHighlightOverlay} skips a spell it cannot
+	 * find without warning, so a missing or misspelled row only shows up as a missing highlight.
+	 * Spellbook Swap twins ({@code Spellbook Swap (Book): Spell}) highlight the Spellbook Swap
+	 * spell itself, the same way the overlay looks them up.
+	 */
+	@Test
+	public void testSpellbookOverlayMatchesSpellTransports() throws IOException
+	{
+		Set<String> widgetDisplayInfo = new TreeSet<>();
+		Util.each("/spell-widget-ids.tsv", (line, c) -> widgetDisplayInfo.add(c[0]));
+		Assert.assertFalse("spell-widget-ids.tsv should contain rows", widgetDisplayInfo.isEmpty());
+
+		Set<String> spellDisplayInfo = new TreeSet<>();
+		for (Set<Transport> set : ResourceLoader.transports().values())
+		{
+			for (Transport transport : set)
+			{
+				if (!TransportType.TELEPORTATION_SPELL.equals(transport.getType())
+					&& !TransportType.TELEPORTATION_SPELL_HOME.equals(transport.getType()))
+				{
+					continue;
+				}
+				String displayInfo = transport.getDisplayInfo();
+				if (displayInfo == null)
+				{
+					continue;
+				}
+				// Mirrors SpellbookHighlightOverlay: a swapped spell highlights Spellbook Swap.
+				if (displayInfo.startsWith("Spellbook Swap ("))
+				{
+					displayInfo = "Spellbook Swap";
+				}
+				spellDisplayInfo.add(displayInfo);
+			}
+		}
+		Assert.assertFalse("spell transports should contain rows", spellDisplayInfo.isEmpty());
+
+		Set<String> missingFromWidgets = new TreeSet<>(spellDisplayInfo);
+		missingFromWidgets.removeAll(widgetDisplayInfo);
+		Assert.assertTrue("spell Display info missing from spell-widget-ids.tsv: "
+			+ missingFromWidgets, missingFromWidgets.isEmpty());
+
+		Set<String> unusedWidgets = new TreeSet<>(widgetDisplayInfo);
+		unusedWidgets.removeAll(spellDisplayInfo);
+		Assert.assertTrue("spell-widget-ids.tsv rows not used by any spell transport: "
+			+ unusedWidgets, unusedWidgets.isEmpty());
+
+		System.out.printf("Validated %d spellbook overlay entries.\n", widgetDisplayInfo.size());
+	}
+
+	/**
 	 * The balloon log-basket unlock is destination-keyed relief: the shared
 	 * basket storage is invisible to the client, so a trip is satisfied by a
 	 * carried log OR the declared unlock. That places hard constraints on where
