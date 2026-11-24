@@ -1,6 +1,7 @@
 package shortestpath.requirement;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import shortestpath.transport.ResourceLoader;
 
 /**
@@ -11,66 +12,31 @@ import shortestpath.transport.ResourceLoader;
  */
 public final class PreferredBanks
 {
-	private static final String SEPARATOR = ",";
+	private static final Map<Integer, String> NAMES_BY_TILE = ResourceLoader.bankNames();
+	/** Every bank's name once, alphabetically. */
+	public static final List<String> NAMES = List.copyOf(new TreeSet<>(NAMES_BY_TILE.values()));
 
 	private PreferredBanks()
 	{
 	}
 
-	private static final class Names
-	{
-		static final Map<Integer, String> BY_TILE = Collections.unmodifiableMap(ResourceLoader.bankNames());
-		static final List<String> SORTED = List.copyOf(new TreeSet<>(BY_TILE.values()));
-	}
-
-	/** Every bank's name, by packed tile. */
-	public static Map<Integer, String> namesByTile()
-	{
-		return Names.BY_TILE;
-	}
-
-	/** Every bank's name once, alphabetically. */
-	public static List<String> names()
-	{
-		return Names.SORTED;
-	}
-
 	/** The bank names in a stored setting; blank and unset read as none. */
 	public static Set<String> parse(Object stored)
 	{
-		Set<String> names = new TreeSet<>();
-		if (stored instanceof String)
-		{
-			for (String name : ((String) stored).split(SEPARATOR))
-			{
-				if (!name.isBlank())
-				{
-					names.add(name.trim());
-				}
-			}
-		}
-		return names;
+		return stored instanceof String ? Arrays.stream(((String) stored).split(","))
+			.map(String::trim).filter(name -> !name.isEmpty())
+			.collect(Collectors.toCollection(TreeSet::new)) : new TreeSet<>();
 	}
 
 	public static String format(Collection<String> names)
 	{
-		return String.join(SEPARATOR, new TreeSet<>(names));
+		return String.join(",", new TreeSet<>(names));
 	}
 
-	/** The tiles of the named banks in {@code namesByTile}. */
-	public static Set<Integer> tiles(Set<String> preferred, Map<Integer, String> namesByTile)
+	/** The tiles of the named banks. */
+	public static Set<Integer> tiles(Set<String> preferred)
 	{
-		Set<Integer> tiles = new HashSet<>();
-		if (!preferred.isEmpty())
-		{
-			namesByTile.forEach((tile, name) ->
-			{
-				if (preferred.contains(name))
-				{
-					tiles.add(tile);
-				}
-			});
-		}
-		return tiles;
+		return NAMES_BY_TILE.entrySet().stream().filter(entry -> preferred.contains(entry.getValue()))
+			.map(Map.Entry::getKey).collect(Collectors.toSet());
 	}
 }

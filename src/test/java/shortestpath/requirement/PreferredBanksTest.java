@@ -24,7 +24,7 @@ public class PreferredBanksTest
 	@Test
 	public void namesFitTheStoredList()
 	{
-		List<String> names = PreferredBanks.names();
+		List<String> names = PreferredBanks.NAMES;
 		assertFalse(names.isEmpty());
 		for (String name : names)
 		{
@@ -37,20 +37,20 @@ public class PreferredBanksTest
 	@Test
 	public void townsWithTwoBanksNameEach()
 	{
-		Set<Integer> west = PreferredBanks.tiles(Set.of("Varrock West"), PreferredBanks.namesByTile());
+		Set<Integer> west = PreferredBanks.tiles(Set.of("Varrock West"));
 		assertEquals(5, west.size());
 		assertTrue(west.contains(WorldPointUtil.packWorldPoint(3185, 3436, 0)));
-		assertEquals(6, PreferredBanks.tiles(Set.of("Varrock East"), PreferredBanks.namesByTile()).size());
+		assertEquals(6, PreferredBanks.tiles(Set.of("Varrock East")).size());
 		for (String town : List.of("Varrock", "Falador", "Ardougne"))
 		{
-			assertFalse(town + " is split", PreferredBanks.names().contains(town));
+			assertFalse(town + " is split", PreferredBanks.NAMES.contains(town));
 		}
 	}
 
 	@Test
 	public void noPreferenceHasNoTiles()
 	{
-		assertTrue(PreferredBanks.tiles(Set.of(), PreferredBanks.namesByTile()).isEmpty());
-		assertTrue(PreferredBanks.tiles(Set.of("Nowhere"), PreferredBanks.namesByTile()).isEmpty());
+		assertTrue(PreferredBanks.tiles(Set.of()).isEmpty());
+		assertTrue(PreferredBanks.tiles(Set.of("Nowhere")).isEmpty());
 	}
 }

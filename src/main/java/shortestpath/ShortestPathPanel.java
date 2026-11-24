@@ -346,13 +346,8 @@ public class ShortestPathPanel extends PluginPanel
 		categories.add(banks);
 
 		// Routes only bank with the setting on, so say why preferring a bank changes nothing.
-		JPanel bankingOff = new JPanel(new BorderLayout());
-		bankingOff.setOpaque(false);
-		JLabel bankingOffLabel = new JLabel(html("Routes only visit a bank when "
+		JComponent bankingOff = RestrictionListPanel.hintLabel(html("Routes only visit a bank when "
 			+ configName("includeBankPath") + " is on in Settings."));
-		bankingOffLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-		bankingOffLabel.setFont(FontManager.getRunescapeSmallFont());
-		bankingOff.add(bankingOffLabel, BorderLayout.CENTER);
 		Runnable syncBankingOff = () -> bankingOff.setVisible(
 			!Boolean.TRUE.equals(settings.configured("includeBankPath")));
 		registerConfigListener("includeBankPath", syncBankingOff);
@@ -360,7 +355,7 @@ public class ShortestPathPanel extends PluginPanel
 		banks.addRow(bankingOff, "Banking off", searchable(configName("includeBankPath")));
 
 		banks.addRow(spinnerRow("costOtherBanks"));
-		for (String name : PreferredBanks.names())
+		for (String name : PreferredBanks.NAMES)
 		{
 			banks.addRow(bankRow(name));
 		}

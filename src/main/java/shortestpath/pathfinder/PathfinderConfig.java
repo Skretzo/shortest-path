@@ -524,8 +524,7 @@ public class PathfinderConfig
 
 		costConsumableTeleportationItems = settings.num(ConfigKey.COST_CONSUMABLE_TELEPORTATION_ITEMS);
 		bankVisitCost = settings.num(ConfigKey.COST_BANK_VISIT);
-		preferredBankTiles = Set.copyOf(PreferredBanks.tiles(
-			PreferredBanks.parse(settings.get(ConfigKey.PREFERRED_BANKS)), PreferredBanks.namesByTile()));
+		preferredBankTiles = Set.copyOf(PreferredBanks.tiles(PreferredBanks.parse(settings.get(ConfigKey.PREFERRED_BANKS))));
 		otherBankCost = settings.num(ConfigKey.COST_OTHER_BANKS);
 
 		// Reset the sailing dispatch inputs every refresh: the service owns the
