@@ -54,6 +54,7 @@ pohJewelleryBoxTier	POH Jewellery Box Tier	The tier of jewellery box built in yo
 pohMountedItems	POH Mounted Items	Select the mounted POH items available in your house		
 usePohMountedItems				
 usePohObelisk	POH Wilderness Obelisk	Whether to include the POH wilderness obelisk in the path.<br>Enable this if you have built an obelisk in your house (80 Construction or boosted)		
+costPohWalk	House Walk Cost	Tiles charged for walking from where you arrive in your house<br>to the teleport you use there. The house is routed as one tile, so its layout is unknown	0	100
 costAgilityShortcuts	Agility Shortcut Threshold	How many extra tiles an agility shortcut must save<br>to be preferred over walking or other transports	0	10000
 costGrappleShortcuts	Grapple Shortcut Threshold	How many extra tiles a grapple shortcut must save<br>to be preferred over walking or other transports	0	10000
 costBoats	Boat Threshold	How many extra tiles a small boat must save<br>to be preferred over walking or other transports	0	10000

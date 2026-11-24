@@ -22,6 +22,8 @@ import shortestpath.sailing.*;
 public class PathfinderConfig
 {
 	private static final List<DestinationRequirements> NO_BANK_REQUIREMENTS = List.of(DestinationRequirements.EMPTY);
+	/** Where the player arrives in their house, which routing treats as the whole house. */
+	private static final int POH_TILE = WorldPointUtil.packWorldPoint(PohService.POH_LANDING_X, PohService.POH_LANDING_Y, 0);
 
 	private final SplitFlagMap mapData;
 	private final ThreadLocal<CollisionMap> map;
@@ -224,6 +226,7 @@ public class PathfinderConfig
 	private volatile int costConsumableTeleportationItems;
 	@Getter
 	private volatile int bankVisitCost;
+	private volatile int pohWalkCost;
 	private volatile int currencyThreshold;
 	/**
 	 * Whether the player is aboard a boat, read from the sailing service's
@@ -519,6 +522,7 @@ public class PathfinderConfig
 
 		costConsumableTeleportationItems = settings.num(ConfigKey.COST_CONSUMABLE_TELEPORTATION_ITEMS);
 		bankVisitCost = settings.num(ConfigKey.COST_BANK_VISIT);
+		pohWalkCost = settings.num(ConfigKey.COST_POH_WALK);
 
 		// Reset the sailing dispatch inputs every refresh: the service owns the
 		// boat-state reads and republishes its snapshot here unconditionally, so a
@@ -640,6 +644,21 @@ public class PathfinderConfig
 	 * Returns the user-configured additional cost for a given transport
 	 */
 	public int getAdditionalTransportCost(Transport transport)
+	{
+		return houseWalkCost(transport) + thresholdCost(transport);
+	}
+
+	/**
+	 * The house is routed as one tile, so a teleport from its furniture is charged the walk to it
+	 * from where the player arrives. The exit portal stands where they arrive.
+	 */
+	private int houseWalkCost(Transport transport)
+	{
+		return transport.getOrigin() == POH_TILE && !TransportType.TELEPORTATION_PORTAL.equals(transport.getType())
+			? pohWalkCost : 0;
+	}
+
+	private int thresholdCost(Transport transport)
 	{
 		// A pinned per-item threshold is the whole additional cost for a
 		// transport referencing that item — the user declared its exact

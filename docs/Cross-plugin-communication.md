@@ -157,7 +157,7 @@ eventBus.post(new PluginMessage("shortestpath", "path", data));
   `useShips`, `useSpiritTrees`, `useTeleportationLevers`, `useTeleportationMinigames`,
   `useTeleportationPortals`, `useTeleportationSpells`, `useTeleportationSpellsHome`,
   `useWildernessObelisks`
-- `int`: `costBankVisit`, `costConsumableTeleportationItems`, `currencyThreshold`,
+- `int`: `costBankVisit`, `costConsumableTeleportationItems`, `costPohWalk`, `currencyThreshold`,
   `recalculateDistance`, `tileCounterStep`, `unreachableTargetDistanceThreshold`, and each
   transport type's `cost...` key (`costBoats`, `costFairyRings`, ...)
 - `Color`: `colourBankPickupHighlight`, `colourCollisionMap`, `colourPath`,

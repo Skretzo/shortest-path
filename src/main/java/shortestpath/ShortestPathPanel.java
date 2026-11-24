@@ -349,6 +349,7 @@ public class ShortestPathPanel extends PluginPanel
 		detail.add(checkRow("usePohFairyRing"));
 		detail.add(checkRow("usePohSpiritTree"));
 		detail.add(checkRow("usePohObelisk"));
+		detail.add(spinnerRow("costPohWalk"));
 		detail.add(comboRow("pohJewelleryBoxTier"));
 		// The five nexus groups and the mounted group share identical
 		// chrome — the captions split them into their two named sets.
