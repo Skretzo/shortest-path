@@ -62,6 +62,7 @@ KNOWN_COLUMNS = {
 # transport TSV — its familyName/displayItemId/memberItemIds/memberLabels
 # columns are not transport columns.
 SKIP_FILES = {
+    "bank-teleports.tsv",
     "config-items.tsv",
     "config-keys.tsv",
     "item-variations.tsv",

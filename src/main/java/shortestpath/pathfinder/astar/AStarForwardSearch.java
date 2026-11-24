@@ -555,14 +555,15 @@ public final class AStarForwardSearch
 		/** Records the cheapest bank visit so far: arrival at a usable bank plus that bank's visit cost. */
 		private void updateBestBank(int state, int cost)
 		{
-			if (!optimized || (state & 1) != 0 || !space.bankGlobalRelevant() || cost >= bestBankCost[0]
-				|| !space.isUsableBankNode(state / 2))
-				return;
-			int visited = CostArithmetic.add(cost, target.account().bankVisitCost(space.tile(state / 2)));
-			if (visited < bestBankCost[0])
+			if (optimized && (state & 1) == 0 && space.bankGlobalRelevant() && cost < bestBankCost[0]
+				&& space.isUsableBankNode(state / 2))
 			{
-				bestBankCost[0] = visited;
-				counters.bestBankUpdates++;
+				int visited = CostArithmetic.add(cost, target.account().bankVisitCost(space.tile(state / 2)));
+				if (visited < bestBankCost[0])
+				{
+					bestBankCost[0] = visited;
+					counters.bestBankUpdates++;
+				}
 			}
 		}
 

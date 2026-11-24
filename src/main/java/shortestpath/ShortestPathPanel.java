@@ -77,6 +77,8 @@ public class ShortestPathPanel extends PluginPanel
 	private static final String SEARCH_TOOLTIP = "Search transports, unlocks and restrictions";
 	private static final String OWNED_FILTER_KEY = "restrictionsOwnedOnly";
 	private static final String PREFERRED_BANKS_KEY = "preferredBanks";
+	private static final String BANK_NOTE_COLOR =
+		String.format("#%06x", ColorScheme.LIGHT_GRAY_COLOR.getRGB() & 0xffffff);
 	private static final int FOOTER_BUTTON_EDGE = 22;
 	private static final int FOOTER_ICON_SIZE = 18;
 	private static final String GITHUB_URL = "https://github.com/Skretzo/shortest-path";
@@ -345,17 +347,10 @@ public class ShortestPathPanel extends PluginPanel
 		CategoryPanel banks = new CategoryPanel("Banks", "preferred banks", this::showHome);
 		categories.add(banks);
 
-		// Routes only bank with the setting on, so say why preferring a bank changes nothing.
-		JComponent bankingOff = RestrictionListPanel.hintLabel(html("Routes only visit a bank when "
-			+ configName("includeBankPath") + " is on in Settings."));
-		Runnable syncBankingOff = () -> bankingOff.setVisible(
-			!Boolean.TRUE.equals(settings.configured("includeBankPath")));
-		registerConfigListener("includeBankPath", syncBankingOff);
-		syncBankingOff.run();
-		banks.addRow(bankingOff, "Banking off", searchable(configName("includeBankPath")));
-
 		banks.addRow(spinnerRow("costOtherBanks"));
-		for (String name : PreferredBanks.NAMES)
+
+		// Cheapest to teleport to first, so the banks players use show without scrolling.
+		for (String name : PreferredBanks.BY_TELEPORT)
 		{
 			banks.addRow(bankRow(name));
 		}
@@ -381,7 +376,14 @@ public class ShortestPathPanel extends PluginPanel
 			})),
 			() -> preferred.setSelected(preferredBanks().contains(name)),
 			null);
-		return labeledRow(name, description, preferred);
+		SearchRow row = labeledRow(name, description, preferred);
+		// Under the name, the cost and teleport of the cheapest route there, cost first so a narrow
+		// panel cuts the teleport rather than the number.
+		PreferredBanks.Teleport teleport = PreferredBanks.TELEPORTS.get(name);
+		JLabel label = (JLabel) ((BorderLayout) row.component.getLayout()).getLayoutComponent(BorderLayout.CENTER);
+		label.setText(html(name + "<br><font color='" + BANK_NOTE_COLOR + "'>"
+			+ (teleport == null ? "No teleport route" : teleport.getCost() + " · " + teleport.getName()) + "</font>"));
+		return row;
 	}
 
 	private Set<String> preferredBanks()

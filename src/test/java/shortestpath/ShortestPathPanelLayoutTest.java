@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -68,6 +69,7 @@ import shortestpath.items.ItemStateService;
 import shortestpath.items.ItemStateTestServices;
 import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.poh.PohNexusPortal;
+import shortestpath.requirement.PreferredBanks;
 import shortestpath.requirement.TeleportRestriction;
 import shortestpath.settings.Settings;
 import shortestpath.settings.TeleportationItem;
@@ -1701,18 +1703,32 @@ public class ShortestPathPanelLayoutTest
 		assertFalse(bankCheckbox("Edgeville").isSelected());
 	}
 
-	@Test
-	public void banksSectionSaysWhenRoutesDoNotBank()
-	{
-		newPanel();
-		assertTrue("Include Path To Bank is off", banksCategory().rows().get(0).component.isVisible());
-		newPanel(ItemStateTestServices.forTesting(), saved -> saved.setIncludeBankPathValue(true));
-		assertFalse(banksCategory().rows().get(0).component.isVisible());
-	}
-
 	private CategoryPanel banksCategory()
 	{
 		return panel.categories().get(3);
+	}
+
+	@Test
+	public void banksListCheapestToTeleportToFirstWithTheTeleport()
+	{
+		newPanel();
+		List<String> shown = shownBanks();
+		assertEquals(PreferredBanks.BY_TELEPORT, shown.subList(1, shown.size()));
+		PreferredBanks.Teleport edgeville = PreferredBanks.TELEPORTS.get("Edgeville");
+		assertTrue(bankLabel("Edgeville").getText().contains(edgeville.getCost() + " · " + edgeville.getName()));
+		assertTrue(bankLabel("Clan Hall").getText().contains("No teleport route"));
+	}
+
+	private JLabel bankLabel(String name)
+	{
+		return (JLabel) ((BorderLayout) bankCheckbox(name).getParent().getLayout())
+			.getLayoutComponent(BorderLayout.CENTER);
+	}
+
+	/** The names of the Banks section's rows, in order. */
+	private List<String> shownBanks()
+	{
+		return banksCategory().rows().stream().map(row -> row.display).collect(Collectors.toList());
 	}
 
 	private JCheckBox bankCheckbox(String name)

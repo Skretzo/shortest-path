@@ -399,7 +399,7 @@ class RestrictionListPanel extends JPanel
 		}
 	}
 
-	static JComponent hintLabel(String text)
+	private static JComponent hintLabel(String text)
 	{
 		JShadowedLabel label = new JShadowedLabel(text);
 		label.setFont(FontManager.getRunescapeSmallFont());

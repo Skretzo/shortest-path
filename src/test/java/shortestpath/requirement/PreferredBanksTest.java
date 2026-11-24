@@ -12,6 +12,16 @@ import shortestpath.WorldPointUtil;
 public class PreferredBanksTest
 {
 	@Test
+	public void teleportsNameBanksAndOrderThem()
+	{
+		assertTrue(PreferredBanks.NAMES.containsAll(PreferredBanks.TELEPORTS.keySet()));
+		assertTrue(PreferredBanks.TELEPORTS.containsKey("Edgeville"));
+		assertEquals(Set.copyOf(PreferredBanks.NAMES), Set.copyOf(PreferredBanks.BY_TELEPORT));
+		assertFalse("banks no teleport reaches come last", PreferredBanks.TELEPORTS.containsKey(
+			PreferredBanks.BY_TELEPORT.get(PreferredBanks.BY_TELEPORT.size() - 1)));
+	}
+
+	@Test
 	public void storedNamesRoundTrip()
 	{
 		Set<String> names = PreferredBanks.parse(" Ferox Enclave,Edgeville ,,");
