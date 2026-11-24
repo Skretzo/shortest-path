@@ -224,9 +224,8 @@ public class PathfinderConfig
 	private volatile int costConsumableTeleportationItems;
 	@Getter
 	private volatile int bankVisitCost;
-	/** The tiles of the player's preferred banks; empty when no bank is preferred. */
+	/** Banks outside preferredBankTiles cost otherBankCost on top of bankVisitCost. */
 	private volatile Set<Integer> preferredBankTiles = Set.of();
-	/** What a visit to a bank outside {@link #preferredBankTiles} costs on top of {@link #bankVisitCost}. */
 	private volatile int otherBankCost;
 	private volatile int currencyThreshold;
 	/**

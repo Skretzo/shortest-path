@@ -309,7 +309,7 @@ public class AStarPathfinderTest
 		java.util.Set<Integer> accessibleBanks, int bankVisitCost)
 	{
 		return PreparedRoutingAccount.compile(availability(carried), availability(banked), bankPath,
-			accessibleBanks, bankVisitCost, true, ignored -> 0);
+			accessibleBanks, bankVisitCost, java.util.Set.of(), 0, true, ignored -> 0);
 	}
 
 	private static TransportAvailability availability(Transport... transports)

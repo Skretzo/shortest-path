@@ -105,7 +105,7 @@ public class AStarGoalLayersTest
 	private void bankAccess(boolean accessible)
 	{
 		PreparedRoutingAccount account = PreparedRoutingAccount.compile(TransportAvailabilityFixture.of(),
-			TransportAvailabilityFixture.of(), true, accessible ? Set.of(BANK) : Set.of(), 5, true, ignored -> 0);
+			TransportAvailabilityFixture.of(), true, accessible ? Set.of(BANK) : Set.of(), 5, java.util.Set.of(), 0, true, ignored -> 0);
 		when(config.prepareAStarRoutingAccount(true, false)).thenReturn(account);
 		when(config.prepareAStarRoutingAccount(true, true)).thenReturn(account);
 	}

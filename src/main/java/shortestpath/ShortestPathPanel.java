@@ -372,13 +372,10 @@ public class ShortestPathPanel extends PluginPanel
 			(control, guard) -> control.addActionListener(e -> PanelRows.guardedWrite(guard, () ->
 			{
 				Set<String> names = preferredBanks();
+				names.remove(name);
 				if (control.isSelected())
 				{
 					names.add(name);
-				}
-				else
-				{
-					names.remove(name);
 				}
 				settings.write(PREFERRED_BANKS_KEY, PreferredBanks.format(names));
 			})),

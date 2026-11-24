@@ -19,11 +19,10 @@ public final class PreparedRoutingAccount
 	@Getter @Accessors(fluent = true) private final boolean bankPathEnabled;
 	/** Bank tiles this account may use, in unsigned order: a subset of the static bank tiles. */
 	private final int[] accessibleBankTiles;
-	/** What switching into the banked layer costs at a preferred bank: the cheapest visit. */
+	/** The cheapest bank visit: a preferred bank's. */
 	@Getter @Accessors(fluent = true) private final int bankVisitCost;
-	/** The player's preferred bank tiles, in unsigned order; empty when every bank counts as preferred. */
+	/** In unsigned order; empty when every bank counts as preferred. */
 	private final int[] preferredBankTiles;
-	/** What a visit to a bank outside {@link #preferredBankTiles} costs on top of {@link #bankVisitCost}. */
 	private final int otherBankCost;
 	private final View[] local = new View[2];
 	/** The global teleports castable with each {@link TeleportCapability}, by ordinal, in each bank layer. */
@@ -51,19 +50,8 @@ public final class PreparedRoutingAccount
 	 * which of them may switch a route into the banked layer
 	 * @param bankVisitCost what switching into the banked layer costs, as legacy's bank-visit edge
 	 * ({@code PathfinderConfig.getBankVisitCost})
-	 */
-	public static PreparedRoutingAccount compile(TransportAvailability carried, TransportAvailability banked,
-		boolean bankPathEnabled, Collection<Integer> accessibleBankTiles, int bankVisitCost,
-		boolean allowTransports, ToIntFunction<Transport> additionalCost)
-	{
-		return compile(carried, banked, bankPathEnabled, accessibleBankTiles, bankVisitCost, Set.of(), 0,
-			allowTransports, additionalCost);
-	}
-
-	/**
-	 * As {@link #compile(TransportAvailability, TransportAvailability, boolean, Collection, int, boolean,
-	 * ToIntFunction)}, with the player's preferred banks: a visit to any other bank costs
-	 * {@code otherBankCost} more. No preferred banks charges every bank the same.
+	 * @param otherBankCost what a bank outside {@code preferredBankTiles} costs on top; no preferred
+	 * banks charges every bank the same
 	 */
 	public static PreparedRoutingAccount compile(TransportAvailability carried, TransportAvailability banked,
 		boolean bankPathEnabled, Collection<Integer> accessibleBankTiles, int bankVisitCost,

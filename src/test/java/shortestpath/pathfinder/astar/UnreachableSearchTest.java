@@ -28,7 +28,7 @@ public class UnreachableSearchTest
 		RoutingStatic stat = RoutingStaticBuilder.build(collision, Map.of(blocked, Set.of(transport)),
 			Set.of(), new int[0], start).routingStatic;
 		PreparedRoutingAccount account = PreparedRoutingAccount.compile(TransportAvailabilityFixture.of(),
-			TransportAvailabilityFixture.of(), false, Set.of(), 0, true, ignored -> 0);
+			TransportAvailabilityFixture.of(), false, Set.of(), 0, java.util.Set.of(), 0, true, ignored -> 0);
 		PreparedTarget prepared = PreparedTarget.prepare(new SiteGraph(stat, account), collision, target);
 		AStarForwardSearch.Result result = prepared.search(start, () -> false, 1);
 
@@ -36,7 +36,7 @@ public class UnreachableSearchTest
 		System.out.println("Unavailable blocked origin: popped=" + result.counters().statesPopped()
 			+ ", discovered=" + result.counters().uniqueStatesReached());
 		PreparedRoutingAccount enabled = PreparedRoutingAccount.compile(TransportAvailabilityFixture.of(transport),
-			TransportAvailabilityFixture.of(transport), false, Set.of(), 0, true, ignored -> 0);
+			TransportAvailabilityFixture.of(transport), false, Set.of(), 0, java.util.Set.of(), 0, true, ignored -> 0);
 		assertTrue(PreparedTarget.prepare(new SiteGraph(stat, enabled), collision, target)
 			.search(start, () -> false, 1).reached());
 	}
@@ -49,7 +49,7 @@ public class UnreachableSearchTest
 			SyntheticCollisionMap.symmetricAdjacency(new int[][] {{start, middle}, {middle, target}}), 1);
 		RoutingStatic stat = RoutingStaticBuilder.build(collision, Map.of(), Set.of(middle), new int[0], start).routingStatic;
 		PreparedRoutingAccount account = PreparedRoutingAccount.compile(TransportAvailabilityFixture.of(),
-			TransportAvailabilityFixture.of(), true, Set.of(), 0, true, ignored -> 0);
+			TransportAvailabilityFixture.of(), true, Set.of(), 0, java.util.Set.of(), 0, true, ignored -> 0);
 		PreparedTarget prepared = PreparedTarget.prepare(new SiteGraph(stat, account), collision,
 			new int[] {target}, new int[] {2});
 		AStarForwardSearch.Result result = prepared.search(start, () -> false, 1, SearchRestrictions.none(),
@@ -61,7 +61,7 @@ public class UnreachableSearchTest
 		System.out.println("Bank-only goal: popped=" + result.counters().statesPopped()
 			+ ", discovered=" + result.counters().uniqueStatesReached());
 		PreparedRoutingAccount enabled = PreparedRoutingAccount.compile(TransportAvailabilityFixture.of(),
-			TransportAvailabilityFixture.of(), true, Set.of(middle), 0, true, ignored -> 0);
+			TransportAvailabilityFixture.of(), true, Set.of(middle), 0, java.util.Set.of(), 0, true, ignored -> 0);
 		assertTrue(PreparedTarget.prepare(new SiteGraph(stat, enabled), collision, new int[] {target}, new int[] {2})
 			.search(start, () -> false, 1, SearchRestrictions.none(), AStarForwardSearch.NO_PROGRESS,
 				(tile, banked) -> banked == BankVisitState.BANKED).reached());
