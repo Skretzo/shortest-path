@@ -52,6 +52,21 @@ public class PathfinderConfigPreferredBanksTest
 		assertEquals(2, account.bankVisitCost(VARROCK_EAST));
 	}
 
+	/** Standing beside a bank never sends the route to a preferred one further away. */
+	@Test
+	public void aBankNearTheStartCountsAsPreferred()
+	{
+		config.set("preferredBanks", "Varrock West");
+		pathfinderConfig.refresh();
+		int besideEast = WorldPointUtil.packWorldPoint(3253, 3425, 0);
+		assertEquals(2, pathfinderConfig.prepareAStarRoutingAccount(true, false, besideEast).bankVisitCost(VARROCK_EAST));
+		int pastTheThreshold = WorldPointUtil.packWorldPoint(3253, 3436, 0);
+		assertEquals(17, pathfinderConfig.prepareAStarRoutingAccount(true, false, pastTheThreshold).bankVisitCost(VARROCK_EAST));
+		assertEquals("another floor is not near", 17,
+			pathfinderConfig.prepareAStarRoutingAccount(true, false, WorldPointUtil.packWorldPoint(3253, 3425, 1))
+				.bankVisitCost(VARROCK_EAST));
+	}
+
 	private PreparedRoutingAccount account()
 	{
 		pathfinderConfig.refresh();

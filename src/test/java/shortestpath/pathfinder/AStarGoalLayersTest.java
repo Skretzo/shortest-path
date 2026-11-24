@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -106,8 +107,8 @@ public class AStarGoalLayersTest
 	{
 		PreparedRoutingAccount account = PreparedRoutingAccount.compile(TransportAvailabilityFixture.of(),
 			TransportAvailabilityFixture.of(), true, accessible ? Set.of(BANK) : Set.of(), 5, java.util.Set.of(), 0, true, ignored -> 0);
-		when(config.prepareAStarRoutingAccount(true, false)).thenReturn(account);
-		when(config.prepareAStarRoutingAccount(true, true)).thenReturn(account);
+		when(config.prepareAStarRoutingAccount(eq(true), eq(false), anyInt())).thenReturn(account);
+		when(config.prepareAStarRoutingAccount(eq(true), eq(true), anyInt())).thenReturn(account);
 	}
 
 	private AStarPathfinder search(HeldItems items, AStarRoutingSession session)

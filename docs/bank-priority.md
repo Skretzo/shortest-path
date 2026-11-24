@@ -17,6 +17,10 @@ max cape, Ferox via ring of dueling). A route that sends them to Edgeville to sa
 - **Soft, never forced.** The cost of reaching a preferred bank comes from what
   the player has *now*. Without their usual item the preferred bank may lose,
   which is correct. A route never walks a long way just to honour a preference.
+- **A bank near the start counts as preferred.** A bank with a tile within the
+  Other Bank Threshold of where the route starts (on the same floor) is charged
+  like a preferred bank, so standing beside a bank never sends the route to a
+  preferred one further away.
 - The threshold applies against *not banking* too: a bank the player has not
   preferred must also save the threshold over a route that skips banking.
 - **Only applies when the route banks**, that is when Include Path To Bank is on,

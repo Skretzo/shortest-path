@@ -354,19 +354,27 @@ public class PathfinderConfig
 	/** Snapshot the already-evaluated account/config state for the A* graph. */
 	public PreparedRoutingAccount prepareAStarRoutingAccount(boolean allowTransports)
 	{
-		return prepareAStarRoutingAccount(allowTransports, false);
+		return prepareAStarRoutingAccount(allowTransports, false, WorldPointUtil.UNDEFINED);
 	}
 
 	/**
 	 * As {@link #prepareAStarRoutingAccount(boolean)}; {@code targetsNeedBank} lets the route visit
 	 * a bank even when {@code includeBankPath} is off, for a target whose items are in the bank.
 	 * The banked layer's transports still follow the settings, so that alone unlocks no teleports.
+	 * A bank within the Other Bank Threshold of {@code start} counts as preferred, so a route that
+	 * starts beside a bank never leaves it for a preferred one further away.
 	 */
-	public PreparedRoutingAccount prepareAStarRoutingAccount(boolean allowTransports, boolean targetsNeedBank)
+	public PreparedRoutingAccount prepareAStarRoutingAccount(boolean allowTransports, boolean targetsNeedBank, int start)
 	{
+		Set<Integer> preferred = preferredBankTiles;
+		if (!preferred.isEmpty() && start != WorldPointUtil.UNDEFINED)
+		{
+			preferred = new HashSet<>(preferred);
+			preferred.addAll(PreferredBanks.tiles(PreferredBanks.near(start, otherBankCost)));
+		}
 		return PreparedRoutingAccount.compile(
 			getTransportAvailability(BankVisitState.CARRIED), getTransportAvailability(BankVisitState.BANKED), includeBankPath || targetsNeedBank,
-			accessibleBankTiles, bankVisitCost, preferredBankTiles, otherBankCost, allowTransports,
+			accessibleBankTiles, bankVisitCost, preferred, otherBankCost, allowTransports,
 			this::getAdditionalTransportCost);
 	}
 

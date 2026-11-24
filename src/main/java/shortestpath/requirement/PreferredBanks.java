@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import lombok.Value;
 import shortestpath.Util;
+import shortestpath.WorldPointUtil;
 import shortestpath.transport.ResourceLoader;
 
 /**
@@ -61,6 +62,14 @@ public final class PreferredBanks
 	public static String format(Collection<String> names)
 	{
 		return String.join(",", new TreeSet<>(names));
+	}
+
+	/** The banks with a tile within {@code distance} tiles of {@code tile}, on its plane. */
+	public static Set<String> near(int tile, int distance)
+	{
+		return NAMES_BY_TILE.entrySet().stream()
+			.filter(entry -> WorldPointUtil.distanceBetween(entry.getKey(), tile) <= distance)
+			.map(Map.Entry::getValue).collect(Collectors.toSet());
 	}
 
 	/** The tiles of the named banks. */

@@ -3,6 +3,7 @@ package shortestpath.scheduler;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
@@ -154,7 +155,7 @@ public class PathSchedulerQueryTest
 		// already happened: the real engine resolved goals against the map and
 		// compiled the routing account — calls the failed() stub never makes.
 		verify(pathfinderConfig, atLeastOnce()).getMap();
-		verify(pathfinderConfig).prepareAStarRoutingAccount(true, false);
+		verify(pathfinderConfig).prepareAStarRoutingAccount(eq(true), eq(false), anyInt());
 
 		// A real engine's run() reached the statics provider and folded the
 		// marker into the result's "A* backend failed:" message — the failed()
