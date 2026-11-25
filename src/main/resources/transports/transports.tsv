@@ -6975,3 +6975,12 @@
 # Lassar Undercity - drain dungeon ladder									
 2805 6303 1	2804 6303 0	Climb-down Ladder 48304						2	
 2804 6303 0	2805 6303 1	Climb-up Ladder 48303						3	
+									
+# Olaf's Quest - Brine Rat Cavern									
+2748 3733 0	2696 10120 0	Dig Spade		952=1		3534>59		3	Dig
+2690 10124 0	2729 3734 0	Exit Cave 23158						3	Roll Boulder → Exit Cave
+2707 10147 0	2706 10147 0	Search Picture wall 23156				3545>0			
+2706 10147 0	2707 10147 0	Search Picture wall 23156				3545>0			
+2725 10168 0	2726 10168 0	Open Gate 23216		11039=1|11040=1|11041=1|11042=1|11043=1					
+2725 10168 0	2726 10168 0	Open Gate 23216			Olaf's Quest				
+2726 10168 0	2725 10168 0	Open Gate 23216							
