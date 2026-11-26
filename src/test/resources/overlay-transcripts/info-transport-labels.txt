@@ -31,12 +31,12 @@ drawString "Spirit tree: Gnome Stronghold" @497,151 | color=rgb(255,255,255) a=2
 setColor rgb(255,0,0) a=* | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
 fill Polygon(1603,251 1687,251 1562,251 1486,251) | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
 setColor rgb(0,0,0) a=255 | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
-drawString "Fairy ring: DIQ" @1542,135 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Fairy ring: DIQ" @676,135 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
 setColor rgb(255,255,255) a=255 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
-drawString "Fairy ring: DIQ" @1541,134 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Fairy ring: DIQ" @675,134 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
 setColor rgb(0,0,0) a=255 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
-drawString "Spirit tree: Gnome Stronghold" @1498,118 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Spirit tree: Gnome Stronghold" @575,118 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
 setColor rgb(255,255,255) a=255 | color=rgb(0,0,0) a=255 stroke=BasicStroke(w=1.0) clip=null
-drawString "Spirit tree: Gnome Stronghold" @1497,117 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
+drawString "Spirit tree: Gnome Stronghold" @574,117 | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
 setColor rgb(255,0,0) a=* | color=rgb(255,255,255) a=255 stroke=BasicStroke(w=1.0) clip=null
 fill Polygon(1687,251 1771,251 1639,251 1562,251) | color=rgb(255,0,0) a=* stroke=BasicStroke(w=1.0) clip=null
