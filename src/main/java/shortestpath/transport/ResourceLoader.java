@@ -34,6 +34,7 @@ public final class ResourceLoader
 {
 	private static final TsvParser tsvParser = new TsvParser();
 	private static final FieldParser<SkillLevels> SKILL_PARSER = new SkillRequirementParser();
+	private static final FieldParser<Integer> WORLD_POINT_PARSER = new WorldPointParser();
 	private static final FieldParser<Set<Quest>> QUEST_PARSER = new QuestParser();
 	private static final FieldParser<Set<VarRequirement>> VARBIT_PARSER = VarRequirementParser.forVarbits();
 	private static final FieldParser<Set<VarRequirement>> VARPLAYER_PARSER = VarRequirementParser.forVarPlayers();
@@ -296,6 +297,27 @@ public final class ResourceLoader
 		{
 			String s = Util.resourceString(path);
 			return parseBankRequirements(s);
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * The bank each {@code bank.tsv} tile belongs to, named by its Info column, in file order.
+	 * A player picks preferred banks by these names, so every tile of one bank shares its name.
+	 */
+	public static Map<Integer, String> bankNames()
+	{
+		try
+		{
+			Map<Integer, String> names = new LinkedHashMap<>();
+			for (TransportRecord row : tsvParser.parse(Util.resourceString("/destinations/game_features/bank.tsv")))
+			{
+				names.putIfAbsent(WORLD_POINT_PARSER.parse(row.getDestination()), row.get("Info").trim());
+			}
+			return names;
 		}
 		catch (IOException e)
 		{

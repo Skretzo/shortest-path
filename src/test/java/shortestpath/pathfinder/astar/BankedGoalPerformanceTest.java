@@ -38,7 +38,7 @@ public class BankedGoalPerformanceTest
 			boolean bankedOnly = scenario.startsWith("bank-");
 			boolean accessible = scenario.equals("bank-reachable");
 			PreparedRoutingAccount account = PreparedRoutingAccount.compile(TransportAvailabilityFixture.of(),
-				TransportAvailabilityFixture.of(), true, accessible ? Set.of(bank) : Set.of(), 5, true, ignored -> 0);
+				TransportAvailabilityFixture.of(), true, accessible ? Set.of(bank) : Set.of(), 5, java.util.Set.of(), 0, true, ignored -> 0);
 			AStarRoutingSession cached = new AStarRoutingSession();
 			long[][] measurements = new long[6][200];
 			AStarForwardSearch.Result result = null;

@@ -209,7 +209,7 @@ public class AStarForwardSearchHotPathTest
 	private static PreparedRoutingAccount account(Transport... transports)
 	{
 		return PreparedRoutingAccount.compile(TransportAvailabilityFixture.of(transports),
-			TransportAvailabilityFixture.of(), false, java.util.Set.of(), 0, true, ignored -> 0);
+			TransportAvailabilityFixture.of(), false, java.util.Set.of(), 0, java.util.Set.of(), 0, true, ignored -> 0);
 	}
 
 	private static Transport local(int origin, int destination, int cost)

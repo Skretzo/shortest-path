@@ -40,7 +40,7 @@ public class PreparedRoutingAccountTest
 				.type(TransportType.TRANSPORT).duration(1).build();
 		TransportAvailability availability = TransportAvailabilityFixture.of(transports);
 
-		PreparedRoutingAccount account = PreparedRoutingAccount.compile(availability, availability, false, java.util.Set.of(), 0, true,
+		PreparedRoutingAccount account = PreparedRoutingAccount.compile(availability, availability, false, java.util.Set.of(), 0, java.util.Set.of(), 0, true,
 			ignored -> 0);
 
 		PreparedRoutingAccount.View view = account.localView(BankVisitState.CARRIED);
@@ -60,10 +60,10 @@ public class PreparedRoutingAccountTest
 
 		PreparedRoutingAccount first =
 			PreparedRoutingAccount.compile(availability(carriedLocal, sharedLocal, wilderness, ordinary),
-				availability(bankedLocal, sharedLocal, wilderness, ordinary), true, Set.of(RoutingStaticTestFixture.BANK), 0, true, ignored -> penalty);
+				availability(bankedLocal, sharedLocal, wilderness, ordinary), true, Set.of(RoutingStaticTestFixture.BANK), 0, java.util.Set.of(), 0, true, ignored -> penalty);
 		PreparedRoutingAccount second =
 			PreparedRoutingAccount.compile(availability(ordinary, wilderness, sharedLocal, carriedLocal),
-				availability(ordinary, wilderness, sharedLocal, bankedLocal), true, Set.of(RoutingStaticTestFixture.BANK), 0, true, ignored -> penalty);
+				availability(ordinary, wilderness, sharedLocal, bankedLocal), true, Set.of(RoutingStaticTestFixture.BANK), 0, java.util.Set.of(), 0, true, ignored -> penalty);
 
 		assertEquals(2, first.localView(BankVisitState.CARRIED).destinations.length);
 		assertEquals(2, first.localView(BankVisitState.BANKED).destinations.length);
@@ -86,7 +86,7 @@ public class PreparedRoutingAccountTest
 	{
 		PreparedRoutingAccount account = PreparedRoutingAccount.compile(
 			availability(global(RoutingStaticTestFixture.C, 1, 29), global(RoutingStaticTestFixture.D, 1, 30)),
-			availability(), false, Set.of(), 0, true, ignored -> 0);
+			availability(), false, Set.of(), 0, java.util.Set.of(), 0, true, ignored -> 0);
 		assertEquals(2, account.globalCount(BankVisitState.CARRIED));
 		assertEquals(1, account.globalCount(TeleportCapability.OVER_20, BankVisitState.CARRIED));
 		assertEquals(30, account.globalView(TeleportCapability.OVER_20, BankVisitState.CARRIED).maxWilderness[0]);
@@ -99,7 +99,7 @@ public class PreparedRoutingAccountTest
 		{
 			new SiteGraph(stat,
 				PreparedRoutingAccount.compile(availability(local(RoutingStaticTestFixture.A, 12345, 1)),
-					availability(), false, Set.of(), 0, true, ignored -> 0));
+					availability(), false, Set.of(), 0, java.util.Set.of(), 0, true, ignored -> 0));
 			fail("missing endpoint must fail");
 		}
 		catch (IllegalStateException expected)
@@ -108,13 +108,13 @@ public class PreparedRoutingAccountTest
 
 		PreparedRoutingAccount overflow = PreparedRoutingAccount.compile(
 			availability(local(RoutingStaticTestFixture.A, RoutingStaticTestFixture.BANK, Integer.MAX_VALUE)),
-			availability(), false, Set.of(), 0, true, ignored -> 1);
+			availability(), false, Set.of(), 0, java.util.Set.of(), 0, true, ignored -> 1);
 		assertEquals(CostArithmetic.INF, overflow.localView(BankVisitState.CARRIED).costs[0]);
 		try
 		{
 			PreparedRoutingAccount.compile(
 				availability(local(RoutingStaticTestFixture.A, RoutingStaticTestFixture.BANK, 1)), availability(),
-				false, Set.of(), 0, true, ignored -> - 1);
+				false, Set.of(), 0, java.util.Set.of(), 0, true, ignored -> - 1);
 			fail("negative cost must fail");
 		}
 		catch (IllegalArgumentException expected)

@@ -35,7 +35,7 @@ public class PreparedRoutingAccountTest
 		builder.add(poh);
 		builder.remapPohTransports();
 		PreparedRoutingAccount account =
-			PreparedRoutingAccount.compile(builder.build(), availability(), false, Set.of(), 0, true, ignored -> 0);
+			PreparedRoutingAccount.compile(builder.build(), availability(), false, Set.of(), 0, java.util.Set.of(), 0, true, ignored -> 0);
 		SiteGraph graph = new SiteGraph(stat, account);
 		int destination = graph.nodeForTile(RoutingStaticTestFixture.C);
 
@@ -52,7 +52,7 @@ public class PreparedRoutingAccountTest
 			availability(local(RoutingStaticTestFixture.A, RoutingStaticTestFixture.BANK, 2)),
 			availability(local(RoutingStaticTestFixture.BANK, RoutingStaticTestFixture.C, 3),
 				global(RoutingStaticTestFixture.D, 5, 29), global(RoutingStaticTestFixture.D, 2, 30)),
-			true, Set.of(RoutingStaticTestFixture.BANK), 0, true, ignored -> penalty);
+			true, Set.of(RoutingStaticTestFixture.BANK), 0, java.util.Set.of(), 0, true, ignored -> penalty);
 		SiteGraph graph = new SiteGraph(stat, account);
 		int bank = graph.nodeForTile(RoutingStaticTestFixture.BANK);
 		int destination = graph.nodeForTile(RoutingStaticTestFixture.D);
@@ -84,11 +84,11 @@ public class PreparedRoutingAccountTest
 		int bank = RoutingStaticTestFixture.BANK;
 		int highPlane = WorldPointUtil.packWorldPoint(1000, 1000, 3);
 		PreparedRoutingAccount none = PreparedRoutingAccount.compile(
-			availability(), availability(), true, Set.of(), 0, true, ignored -> 0);
+			availability(), availability(), true, Set.of(), 0, java.util.Set.of(), 0, true, ignored -> 0);
 		PreparedRoutingAccount some = PreparedRoutingAccount.compile(
-			availability(), availability(), true, java.util.List.of(highPlane, bank, highPlane), 0, true, ignored -> 0);
+			availability(), availability(), true, java.util.List.of(highPlane, bank, highPlane), 0, java.util.Set.of(), 0, true, ignored -> 0);
 		PreparedRoutingAccount reordered = PreparedRoutingAccount.compile(
-			availability(), availability(), true, java.util.List.of(bank, highPlane), 0, true, ignored -> 0);
+			availability(), availability(), true, java.util.List.of(bank, highPlane), 0, java.util.Set.of(), 0, true, ignored -> 0);
 
 		assertFalse(none.bankAccessible(bank));
 		assertTrue(some.bankAccessible(bank));
@@ -103,9 +103,9 @@ public class PreparedRoutingAccountTest
 	{
 		Transport bankedGlobal = global(RoutingStaticTestFixture.D, 5, 30);
 		PreparedRoutingAccount free = PreparedRoutingAccount.compile(availability(), availability(bankedGlobal), true,
-			Set.of(RoutingStaticTestFixture.BANK), 0, true, ignored -> 0);
+			Set.of(RoutingStaticTestFixture.BANK), 0, java.util.Set.of(), 0, true, ignored -> 0);
 		PreparedRoutingAccount costed = PreparedRoutingAccount.compile(availability(), availability(bankedGlobal),
-			true, Set.of(RoutingStaticTestFixture.BANK), 7, true, ignored -> 0);
+			true, Set.of(RoutingStaticTestFixture.BANK), 7, java.util.Set.of(), 0, true, ignored -> 0);
 		SiteGraph graph = new SiteGraph(stat, costed);
 		int bank = graph.nodeForTile(RoutingStaticTestFixture.BANK);
 
@@ -117,7 +117,7 @@ public class PreparedRoutingAccountTest
 			SiteGraph.EdgeKind.BANK_GLOBAL_ENTRY));
 		try
 		{
-			PreparedRoutingAccount.compile(availability(), availability(), true, Set.of(), -1, true, ignored -> 0);
+			PreparedRoutingAccount.compile(availability(), availability(), true, Set.of(), -1, java.util.Set.of(), 0, true, ignored -> 0);
 			fail("negative bank visit cost must fail");
 		}
 		catch (IllegalArgumentException expected)
@@ -130,9 +130,9 @@ public class PreparedRoutingAccountTest
 	{
 		Transport bankedGlobal = global(RoutingStaticTestFixture.D, 5, 30);
 		SiteGraph inaccessible = new SiteGraph(stat, PreparedRoutingAccount.compile(
-			availability(), availability(bankedGlobal), true, Set.of(), 0, true, ignored -> 0));
+			availability(), availability(bankedGlobal), true, Set.of(), 0, java.util.Set.of(), 0, true, ignored -> 0));
 		SiteGraph accessible = new SiteGraph(stat, PreparedRoutingAccount.compile(
-			availability(), availability(bankedGlobal), true, Set.of(RoutingStaticTestFixture.BANK), 0, true,
+			availability(), availability(bankedGlobal), true, Set.of(RoutingStaticTestFixture.BANK), 0, java.util.Set.of(), 0, true,
 			ignored -> 0));
 		int bank = inaccessible.nodeForTile(RoutingStaticTestFixture.BANK);
 

@@ -19,19 +19,25 @@ public final class PreparedRoutingAccount
 	@Getter @Accessors(fluent = true) private final boolean bankPathEnabled;
 	/** Bank tiles this account may use, in unsigned order: a subset of the static bank tiles. */
 	private final int[] accessibleBankTiles;
+	/** The cheapest bank visit: a preferred bank's. */
 	@Getter @Accessors(fluent = true) private final int bankVisitCost;
+	/** In unsigned order; empty when every bank counts as preferred. */
+	private final int[] preferredBankTiles;
+	private final int otherBankCost;
 	private final View[] local = new View[2];
 	/** The global teleports castable with each {@link TeleportCapability}, by ordinal, in each bank layer. */
 	private final View[][] global;
 	@Getter @Accessors(fluent = true) private final long fingerprint;
 
 	private PreparedRoutingAccount(boolean allowTransports, boolean bankPathEnabled, int[] accessibleBankTiles,
-		int bankVisitCost, View[] local, View[][] global)
+		int bankVisitCost, int[] preferredBankTiles, int otherBankCost, View[] local, View[][] global)
 	{
 		this.allowTransports = allowTransports;
 		this.bankPathEnabled = bankPathEnabled;
 		this.accessibleBankTiles = accessibleBankTiles;
 		this.bankVisitCost = bankVisitCost;
+		this.preferredBankTiles = preferredBankTiles;
+		this.otherBankCost = preferredBankTiles.length == 0 ? 0 : otherBankCost;
 		this.local[0] = local[0];
 		this.local[1] = local[1];
 		this.global = global;
@@ -44,13 +50,17 @@ public final class PreparedRoutingAccount
 	 * which of them may switch a route into the banked layer
 	 * @param bankVisitCost what switching into the banked layer costs, as legacy's bank-visit edge
 	 * ({@code PathfinderConfig.getBankVisitCost})
+	 * @param otherBankCost what a bank outside {@code preferredBankTiles} costs on top; no preferred
+	 * banks charges every bank the same
 	 */
 	public static PreparedRoutingAccount compile(TransportAvailability carried, TransportAvailability banked,
 		boolean bankPathEnabled, Collection<Integer> accessibleBankTiles, int bankVisitCost,
+		Collection<Integer> preferredBankTiles, int otherBankCost,
 		boolean allowTransports, ToIntFunction<Transport> additionalCost)
 	{
 		int[] banks = sortedUnsigned(accessibleBankTiles);
 		CostArithmetic.validate(bankVisitCost);
+		CostArithmetic.validate(otherBankCost);
 		View[] local = new View[2];
 		View[][] global = new View[CAPABILITIES.length][2];
 		for (int bankedState = 0; bankedState < 2; bankedState++)
@@ -62,7 +72,8 @@ public final class PreparedRoutingAccount
 				global[capability.ordinal()][bankedState] = allowTransports
 					? View.global(availability.getUsableTeleports(), additionalCost, capability) : View.empty(false);
 		}
-		return new PreparedRoutingAccount(allowTransports, bankPathEnabled, banks, bankVisitCost, local, global);
+		return new PreparedRoutingAccount(allowTransports, bankPathEnabled, banks, bankVisitCost,
+			sortedUnsigned(preferredBankTiles), otherBankCost, local, global);
 	}
 
 	private static int[] sortedUnsigned(Collection<Integer> tiles)
@@ -91,7 +102,12 @@ public final class PreparedRoutingAccount
 	{
 		return IntArrays.binarySearch(accessibleBankTiles, packedTile) >= 0;
 	}
-	/** The cost of switching into the banked layer at an accessible bank. */
+	/** The cost of switching into the banked layer at the accessible bank {@code packedTile}. */
+	public int bankVisitCost(int packedTile)
+	{
+		return otherBankCost == 0 || IntArrays.binarySearch(preferredBankTiles, packedTile) >= 0
+			? bankVisitCost : CostArithmetic.add(bankVisitCost, otherBankCost);
+	}
 
 	/** The global teleports castable outside the wilderness: every global this account has. */
 	public int globalCount(BankVisitState banked)
@@ -148,6 +164,10 @@ public final class PreparedRoutingAccount
 		hash = mix(hash, allowTransports ? 1 : 0);
 		hash = mix(hash, bankPathEnabled ? 1 : 0);
 		hash = u32(hash, bankVisitCost);
+		hash = u32(hash, otherBankCost);
+		hash = u32(hash, preferredBankTiles.length);
+		for (int tile : preferredBankTiles)
+			hash = u32(hash, tile);
 		hash = u32(hash, accessibleBankTiles.length);
 		for (int tile : accessibleBankTiles)
 			hash = u32(hash, tile);

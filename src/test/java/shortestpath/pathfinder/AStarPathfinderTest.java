@@ -9,6 +9,7 @@ import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import shortestpath.pathfinder.astar.AStarForwardSearch;
 import shortestpath.pathfinder.astar.PreparedHeuristic;
 import shortestpath.pathfinder.astar.PreparedRoutingAccount;
@@ -43,7 +44,7 @@ public class AStarPathfinderTest
 		PathfinderConfig config = mock(PathfinderConfig.class);
 		when(config.getMap()).thenReturn(collision);
 		when(config.isTransportDestination(RoutingStaticTestFixture.D)).thenReturn(true);
-		when(config.prepareAStarRoutingAccount(true, false))
+		when(config.prepareAStarRoutingAccount(eq(true), eq(false), anyInt()))
 			.thenReturn(account(global(RoutingStaticTestFixture.D, 2), new Transport[0], false));
 		AStarPathfinder search = new AStarPathfinder(config, RoutingStaticTestFixture.create(), null,
 			RoutingStaticTestFixture.A, java.util.Set.of(RoutingStaticTestFixture.D), null, 1);
@@ -70,7 +71,7 @@ public class AStarPathfinderTest
 		when(config.getMap()).thenReturn(collision);
 		when(config.isCollisionAwareBlockedTargets()).thenReturn(true);
 		when(config.getUnreachableTargetDistance()).thenReturn(1);
-		when(config.prepareAStarRoutingAccount(true, false))
+		when(config.prepareAStarRoutingAccount(eq(true), eq(false), anyInt()))
 			.thenReturn(account());
 		return new AStarPathfinder(config, RoutingStaticTestFixture.createT3(), null, start,
 			java.util.Set.of(blocked), null, 1);
@@ -253,7 +254,7 @@ public class AStarPathfinderTest
 		PathfinderConfig config = mock(PathfinderConfig.class);
 		CollisionMap collision = emptyCollision();
 		when(config.getMap()).thenReturn(collision);
-		when(config.prepareAStarRoutingAccount(true, false))
+		when(config.prepareAStarRoutingAccount(eq(true), eq(false), anyInt()))
 			.thenReturn(account(global(RoutingStaticTestFixture.D, 2), new Transport[0], false));
 		when(config.getCalculationCutoffMillis()).thenReturn(cutoffMillis);
 		return new AStarPathfinder(config, stat, null, RoutingStaticTestFixture.A,
@@ -309,7 +310,7 @@ public class AStarPathfinderTest
 		java.util.Set<Integer> accessibleBanks, int bankVisitCost)
 	{
 		return PreparedRoutingAccount.compile(availability(carried), availability(banked), bankPath,
-			accessibleBanks, bankVisitCost, true, ignored -> 0);
+			accessibleBanks, bankVisitCost, java.util.Set.of(), 0, true, ignored -> 0);
 	}
 
 	private static TransportAvailability availability(Transport... transports)

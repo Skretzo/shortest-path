@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -68,6 +69,7 @@ import shortestpath.items.ItemStateService;
 import shortestpath.items.ItemStateTestServices;
 import shortestpath.poh.JewelleryBoxTier;
 import shortestpath.poh.PohNexusPortal;
+import shortestpath.requirement.PreferredBanks;
 import shortestpath.requirement.TeleportRestriction;
 import shortestpath.settings.Settings;
 import shortestpath.settings.TeleportationItem;
@@ -141,9 +143,10 @@ public class ShortestPathPanelLayoutTest
 				Set<BalloonRoute> routes = (Set<BalloonRoute>) value;
 				config.setBalloonLogBasketRoutesValue(routes);
 			}
-			else if ("restrictionsOwnedOnly".equals(i.getArgument(1)))
+			else if ("restrictionsOwnedOnly".equals(i.getArgument(1))
+				|| "preferredBanks".equals(i.getArgument(1)))
 			{
-				config.set("restrictionsOwnedOnly", i.getArgument(2));
+				config.set(i.getArgument(1), i.getArgument(2));
 			}
 			else if ("pohNexusPortals".equals(i.getArgument(1)))
 			{
@@ -351,7 +354,7 @@ public class ShortestPathPanelLayoutTest
 		newPanel();
 		List<JScrollPane> scrolls = scrollsIn(panel);
 		assertEquals("the home view plus one scroll per section",
-			4, scrolls.size());
+			5, scrolls.size());
 		for (JScrollPane scroll : scrolls)
 		{
 			JComponent view = (JComponent) scroll.getViewport().getView();
@@ -375,15 +378,16 @@ public class ShortestPathPanelLayoutTest
 	public void sidebarOpensOnTileGridAndDrillsIntoSections()
 	{
 		newPanel();
-		assertEquals("exactly three sections", 3, panel.categories().size());
+		assertEquals("exactly four sections", 4, panel.categories().size());
 		assertEquals("Transports", panel.categories().get(0).categoryName());
 		assertEquals("Teleport Restrictions", panel.categories().get(1).categoryName());
 		assertEquals("Player-Owned House", panel.categories().get(2).categoryName());
+		assertEquals("Banks", panel.categories().get(3).categoryName());
 
 		JComponent home = homeView();
 		List<JButton> tileButtons = tileButtonsIn(home);
 		assertEquals("one tile per section plus the Settings tile",
-			4, tileButtons.size());
+			5, tileButtons.size());
 
 		// CardLayout flags only the current card visible once the body
 		// lays out — the tile grid is the initial card.
@@ -487,7 +491,7 @@ public class ShortestPathPanelLayoutTest
 		JComponent home = homeView();
 
 		List<JButton> tiles = tileButtonsIn(home);
-		JButton settings = tiles.get(3);
+		JButton settings = tiles.get(4);
 		assertEquals("Settings", settings.getToolTipText());
 		settings.doClick();
 		assertEquals("one config-open event posted", 1, postedEvents.size());
@@ -1670,6 +1674,70 @@ public class ShortestPathPanelLayoutTest
 			PohNexusPortal.PortalGroup.values().length, groups.size());
 		assertEquals("the wiki-verified list still covers 40 portals",
 			40, PohNexusPortal.values().length);
+	}
+
+	// ---- Banks -------------------------------------------------------------
+
+	@Test
+	public void checkingBanksSavesThemAsPreferred()
+	{
+		newPanel();
+		JCheckBox ferox = bankCheckbox("Ferox Enclave");
+		assertFalse(ferox.isSelected());
+
+		ferox.doClick();
+		bankCheckbox("Edgeville").doClick();
+		assertEquals("Edgeville,Ferox Enclave", settings.configured("preferredBanks"));
+		assertTrue("the tile counts preferred banks", labelsIn(tileButtonsIn(homeView()).get(3)).stream()
+			.anyMatch(label -> "2 preferred".equals(label.getText())));
+
+		ferox.doClick();
+		assertEquals("Edgeville", settings.configured("preferredBanks"));
+	}
+
+	@Test
+	public void preferredBanksComeBackFromTheSavedSetting()
+	{
+		newPanel(ItemStateTestServices.forTesting(), saved -> saved.set("preferredBanks", "Ferox Enclave"));
+		assertTrue(bankCheckbox("Ferox Enclave").isSelected());
+		assertFalse(bankCheckbox("Edgeville").isSelected());
+	}
+
+	private CategoryPanel banksCategory()
+	{
+		return panel.categories().get(3);
+	}
+
+	@Test
+	public void banksListCheapestToTeleportToFirstWithTheTeleport()
+	{
+		newPanel();
+		List<String> shown = shownBanks();
+		assertEquals(PreferredBanks.BY_TELEPORT, shown.subList(1, shown.size()));
+		PreferredBanks.Teleport edgeville = PreferredBanks.TELEPORTS.get("Edgeville");
+		assertTrue(bankLabel("Edgeville").getText().contains(edgeville.getCost() + " · " + edgeville.getName()));
+		assertTrue(bankLabel("Clan Hall").getText().contains("No teleport route"));
+	}
+
+	private JLabel bankLabel(String name)
+	{
+		return (JLabel) ((BorderLayout) bankCheckbox(name).getParent().getLayout())
+			.getLayoutComponent(BorderLayout.CENTER);
+	}
+
+	/** The names of the Banks section's rows, in order. */
+	private List<String> shownBanks()
+	{
+		return banksCategory().rows().stream().map(row -> row.display).collect(Collectors.toList());
+	}
+
+	private JCheckBox bankCheckbox(String name)
+	{
+		return banksCategory().rows().stream()
+			.filter(row -> name.equals(row.display))
+			.map(row -> (JCheckBox) ((BorderLayout) row.component.getLayout())
+				.getLayoutComponent(BorderLayout.EAST))
+			.findFirst().orElseThrow(() -> new AssertionError("no bank row " + name));
 	}
 
 	// ---- POH collapsible groups -----------------------------------------

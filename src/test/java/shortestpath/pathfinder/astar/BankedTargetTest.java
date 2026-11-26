@@ -123,7 +123,7 @@ public class BankedTargetTest
 	private PreparedTarget prepare(int[] tiles, int[] masks, boolean accessible, int bankCost)
 	{
 		PreparedRoutingAccount account = PreparedRoutingAccount.compile(TransportAvailabilityFixture.of(),
-			TransportAvailabilityFixture.of(), true, accessible ? Set.of(BANK) : Set.of(), bankCost, true, ignored -> 0);
+			TransportAvailabilityFixture.of(), true, accessible ? Set.of(BANK) : Set.of(), bankCost, java.util.Set.of(), 0, true, ignored -> 0);
 		return PreparedTarget.prepare(new SiteGraph(stat, account), collision, tiles, masks);
 	}
 

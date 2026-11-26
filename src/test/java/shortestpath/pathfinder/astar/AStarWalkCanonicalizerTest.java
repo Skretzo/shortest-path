@@ -36,7 +36,7 @@ public class AStarWalkCanonicalizerTest
 	// Away from the wilderness, so every global teleport is castable.
 	private static final int BASE_X = 3200, BASE_Y = 3200;
 	private static final PreparedRoutingAccount NO_TRANSPORTS = PreparedRoutingAccount.compile(null, null, false,
-		Set.of(), 0, false, ignored -> 0);
+		Set.of(), 0, java.util.Set.of(), 0, false, ignored -> 0);
 
 	@Test
 	public void walkTheGameAlreadyTakesIsKept()
@@ -813,7 +813,7 @@ public class AStarWalkCanonicalizerTest
 		Transport far = transport(pack(5, 10), destination, "Climb-up Ladder 1");
 		// Only the far ladder is open to a player carrying items; with banked items both are.
 		PreparedRoutingAccount account = PreparedRoutingAccount.compile(TransportAvailabilityFixture.of(far),
-			TransportAvailabilityFixture.of(near, far), false, Set.of(), 0, true, ignored -> 0);
+			TransportAvailabilityFixture.of(near, far), false, Set.of(), 0, java.util.Set.of(), 0, true, ignored -> 0);
 		List<PathStep> carried = new ArrayList<>(), banked = new ArrayList<>();
 		int[][] tiles = {{0, 0}, {1, 1}, {2, 2}, {3, 3}, {4, 4}, {5, 5}, {5, 6}, {5, 7}, {5, 8}, {5, 9}, {5, 10}, {50, 50}};
 		for (int[] tile : tiles)
@@ -1059,7 +1059,7 @@ public class AStarWalkCanonicalizerTest
 	private static PreparedRoutingAccount account(Transport... transports)
 	{
 		return PreparedRoutingAccount.compile(TransportAvailabilityFixture.of(transports),
-			TransportAvailabilityFixture.of(transports), false, Set.of(), 0, true, ignored -> 0);
+			TransportAvailabilityFixture.of(transports), false, Set.of(), 0, java.util.Set.of(), 0, true, ignored -> 0);
 	}
 
 	private static Transport transport(int origin, int destination, String objectInfo)

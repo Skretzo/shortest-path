@@ -138,7 +138,7 @@ public final class AStarPathfinder implements ActiveSearch
 		this.unreachableTargetDistance = config.getUnreachableTargetDistance();
 		this.collisionAwareBlockedTargets = config.isCollisionAwareBlockedTargets();
 		long phaseStarted = System.nanoTime();
-		this.account = config.prepareAStarRoutingAccount(true, GoalStates.needsBank(targets, heldItems));
+		this.account = config.prepareAStarRoutingAccount(true, GoalStates.needsBank(targets, heldItems), start);
 		this.accountPrepareNanos = System.nanoTime() - phaseStarted;
 		this.restrictions = restrictions(config, targets.points());
 		this.cutoffMillis = config.getCalculationCutoffMillis();
