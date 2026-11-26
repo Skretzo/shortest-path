@@ -458,6 +458,7 @@ public class ShortestPathPlugin extends Plugin
 	public void onWidgetLoaded(WidgetLoaded event)
 	{
 		annotator.widgetLoaded(event.getGroupId(), scheduler.getActiveSearch());
+		coordinator.widgetLoaded(event.getGroupId());
 
 		if (event.getGroupId() == InterfaceID.TELENEXUS_TELEPORT)
 		{
@@ -487,6 +488,7 @@ public class ShortestPathPlugin extends Plugin
 	public void onWidgetClosed(WidgetClosed event)
 	{
 		annotator.widgetClosed(event.getGroupId());
+		coordinator.widgetClosed(event.getGroupId());
 	}
 
 	@Subscribe
