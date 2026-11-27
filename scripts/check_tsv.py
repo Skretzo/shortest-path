@@ -70,6 +70,7 @@ SKIP_FILES = {
     "spirit-tree-patches.tsv",
     "teleport_restrictions.tsv",
     "transport-types.tsv",
+    "world-map-areas.tsv",
 }
 
 SKILL_NAMES = {
