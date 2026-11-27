@@ -1757,9 +1757,9 @@ public class ShortestPathPanelLayoutTest
 			}
 		}
 		assertEquals("five spellbook groups + the mounted-items group", 6, groups);
-		assertEquals("the card detail is compact — 4 rows + 2 captions "
+		assertEquals("the card detail is compact — 5 rows + 2 captions "
 				+ "+ 6 group headers instead of 40+ flat member rows",
-			12, card.detail.getComponentCount());
+			13, card.detail.getComponentCount());
 	}
 
 	/**

@@ -2313,6 +2313,8 @@ public class PathfinderTest
 		config.set("pohNexusPortals", Set.of(PohNexusPortal.LUMBRIDGE));
 		config.set("pohJewelleryBoxTier", JewelleryBoxTier.NONE);
 		config.set("pohMountedItems", Set.of());
+		// The race is the point here, not the walk inside the house.
+		config.set("costPohWalk", 0);
 		// The expensive competing teleport must exist or the bug cannot reproduce.
 		config.set("useTeleportationSpellsHome", true);
 		setupInventory(new Item(ItemID.POH_TABLET_TELEPORTTOHOUSE, 1));
@@ -2345,6 +2347,7 @@ public class PathfinderTest
 		config.set("pohNexusPortals", Set.of(PohNexusPortal.LUMBRIDGE));
 		config.set("pohJewelleryBoxTier", JewelleryBoxTier.NONE);
 		config.set("pohMountedItems", Set.of());
+		config.set("costPohWalk", 0);
 		config.set("useTeleportationSpellsHome", true);
 		config.set("includeBankPath", true);
 		setupInventory(new Item(ItemID.POH_TABLET_TELEPORTTOHOUSE, 1));
