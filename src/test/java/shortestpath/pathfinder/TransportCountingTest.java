@@ -33,8 +33,11 @@ public class TransportCountingTest
 		 * It is impossible to travel from and to the same place, so subtract 21.
 		 * It is also impossible to travel between certain places, presumably
 		 * because the distance between them is too small. Currently 16 of these.
+		 * Every fare also has a half-price Cabin Fever copy, except the 2 * 19
+		 * fares to and from Mos Le'Harmless, which are listed halved already.
 		 */
-		assertEquals(21 * 21 - 21 - 16, actualCount);
+		int fares = 21 * 21 - 21 - 16;
+		assertEquals(fares + fares - 2 * 19, actualCount);
 	}
 
 	@Test
