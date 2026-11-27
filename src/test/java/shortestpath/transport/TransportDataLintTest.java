@@ -29,6 +29,32 @@ import shortestpath.transport.parser.TsvParser;
 public class TransportDataLintTest
 {
 	@Test
+	public void dailyDesertAmuletTeleportNeedsMediumDiaryAndUnusedCharge()
+	{
+		Transport teleport = ResourceLoader.transports().values().stream()
+			.flatMap(Set::stream)
+			.filter(t -> "Desert amulet 3: Teleport".equals(t.getDisplayInfo()))
+			.findFirst().orElseThrow();
+		Map<Integer, Integer> unused = Map.of(4484, 1, 4485, 0, 4558, 0);
+		Assert.assertTrue("medium diary alone unlocks the teleport", teleport.getVarRequirements().stream()
+			.allMatch(requirement -> requirement.check(unused, 0)));
+		for (Map<Integer, Integer> blocked : List.of(
+			Map.of(4484, 0, 4485, 0, 4558, 0),
+			Map.of(4484, 1, 4485, 1, 4558, 1)))
+		{
+			Assert.assertFalse(teleport.getVarRequirements().stream()
+				.allMatch(requirement -> requirement.check(blocked, 0)));
+		}
+		for (int itemId : new int[]{13134, 13135})
+		{
+			Assert.assertTrue(teleport.getItemRequirements().isSatisfiedBy(
+				Map.of(itemId, 1), Set.of(), Integer.MAX_VALUE));
+		}
+		Assert.assertFalse("amulet 1 cannot teleport", teleport.getItemRequirements().isSatisfiedBy(
+			Map.of(13133, 1), Set.of(), Integer.MAX_VALUE));
+	}
+
+	@Test
 	public void corpTeleportsAndWildernessEntranceUseTheSameCave()
 	{
 		int landing = WorldPointUtil.packWorldPoint(2964, 4382, 2);
